@@ -1,30 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  Button,
-  Chip,
-  Tabs,
-  Tab,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Collapse,
-  Snackbar,
-  Alert,
-} from '@mui/material';
-import { Add, ExpandMore, ExpandLess } from '@mui/icons-material';
+import { Container, Typography, Box, Card, CardMedia, CardContent, Button, Chip, Tabs, Tab, Snackbar, Alert, Skeleton } from '@mui/material';
+import { Add } from '@mui/icons-material';
 import { useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { productsAPI } from '../services/api';
-import ProductCustomization from '../components/ProductCustomization';
-import IceCreamCustomization from '../components/IceCreamCustomization';
+import { productsAPI, categoriesAPI } from '../services/api';
+import SEO from '../components/SEO';
 
 interface Product {
   _id: string;
@@ -35,60 +15,37 @@ interface Product {
   category: string;
   featured: boolean;
   inStock: boolean;
-  flavors?: string[];
-  toppings?: string[];
-  sizes?: Array<{
-    name: string;
-    price: number;
-  }>;
+  sizes?: Array<{ name: string; price: number }>;
 }
-
-const categories = [
-  { id: 'all', name: 'All Items', color: '#FF6B6B' },
-  { id: 'ice-cream', name: 'Ice Cream', color: '#4ECDC4' },
-  { id: 'waffle', name: 'Waffles', color: '#45B7D1' },
-  { id: 'cake', name: 'Cakes', color: '#96CEB4' },
-  { id: 'milkshake', name: 'Milkshakes', color: '#FFEAA7' },
-  { id: 'drink', name: 'Drinks', color: '#DDA0DD' },
-];
 
 const Products: React.FC = () => {
   const location = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [customizationOpen, setCustomizationOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [addedItemName, setAddedItemName] = useState('');
   const { addToCart } = useCart();
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
   useEffect(() => {
-    // Handle category from footer links
     if (location.state?.category) {
       setSelectedCategory(location.state.category);
     }
   }, [location.state]);
 
-  useEffect(() => {
-    if (selectedCategory === 'all') {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(products.filter(product => product.category === selectedCategory));
-    }
-  }, [selectedCategory, products]);
-
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
-      const response = await productsAPI.getAll();
-      setProducts(response.data.products);
-      setFilteredProducts(response.data.products);
+      const [productsRes, categoriesRes] = await Promise.all([
+        productsAPI.getAll(),
+        categoriesAPI.getAll().catch(() => ({ data: [] }))
+      ]);
+      setProducts(productsRes.data.products || []);
+      setCategories(categoriesRes.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -96,545 +53,189 @@ const Products: React.FC = () => {
     }
   };
 
-  const handleCategoryChange = (event: React.SyntheticEvent, newValue: string) => {
-    setSelectedCategory(newValue);
-  };
+  const filteredProducts = selectedCategory === 'all'
+    ? products
+    : products.filter(p => p.category === selectedCategory);
 
-  const handleProductClick = (productId: string) => {
-    setExpandedProduct(expandedProduct === productId ? null : productId);
-  };
-
-  const handleCustomizeProduct = (product: Product) => {
-    setSelectedProduct(product);
-    setCustomizationOpen(true);
-  };
-
-  const handleAddToCart = (customizedProduct: any) => {
-    console.log('Adding to cart:', customizedProduct.name);
-    addToCart(customizedProduct);
-    setAddedItemName(customizedProduct.name);
-    setShowConfirmation(true);
-    console.log('Snackbar should show:', customizedProduct.name);
-  };
-
-  const handleQuickAdd = (product: Product, flavor?: string, size?: { name: string; price: number }) => {
+  const handleAddToCart = (product: Product, size?: { name: string; price: number }) => {
     const price = size ? size.price : product.price;
-    const itemName = product.name + (flavor ? ` (${flavor})` : '') + (size ? ` - ${size.name}` : '');
-    console.log('Quick adding to cart:', itemName);
-    const customizations = [];
-    if (flavor) {
-      customizations.push({
-        name: 'Flavor',
-        value: flavor,
-        additionalPrice: 0
-      });
-    }
-    if (size) {
-      customizations.push({
-        name: 'Size',
-        value: size.name,
-        additionalPrice: size.price - product.price
-      });
-    }
-    
+    const name = size ? `${product.name} - ${size.name}` : product.name;
+
     addToCart({
-      id: product._id,
-      name: itemName,
-      price: price,
+      id: `${product._id}-${size?.name || 'standard'}`,
+      name,
+      price,
       image: product.image,
-      customizations,
+      customizations: size ? [{ name: 'Size', value: size.name, additionalPrice: size.price - product.price }] : []
     });
-    setAddedItemName(itemName);
+    setAddedItemName(name);
     setShowConfirmation(true);
-    console.log('Quick add snackbar should show:', itemName);
   };
 
-  if (loading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h4">Loading our delicious menu...</Typography>
-      </Container>
-    );
-  }
+  // Build category tabs from DB categories + fallback
+  const categoryTabs = [
+    { id: 'all', name: 'All' },
+    ...(categories.length > 0
+      ? categories.map((c: any) => ({ id: c.slug, name: c.name }))
+      : [
+          { id: 'ice-cream', name: 'Ice Cream' },
+          { id: 'waffle', name: 'Waffles' },
+          { id: 'milkshake', name: 'Milkshakes' },
+          { id: 'cake', name: 'Cakes' },
+          { id: 'drink', name: 'Drinks' }
+        ]
+    )
+  ];
 
   return (
-    <Box sx={{ bgcolor: '#f8f9fa', minHeight: '100vh', py: 4 }}>
+    <Box sx={{ bgcolor: '#fff8f4', minHeight: '100vh', py: 4 }}>
+      <SEO title="Menu" description="Browse our full menu of ice cream, waffles, milkshakes, cakes and more." />
       <Container maxWidth="lg">
         {/* Header */}
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 3 }}>
-            <img
-              src="/images/creamychills.jpeg"
-              alt="Creamy Chills Logo"
-              style={{
-                height: '80px',
-                width: 'auto',
-                marginRight: '16px',
-              }}
-            />
-            <Typography 
-              variant="h2" 
-              component="h1" 
-              sx={{ 
-                fontWeight: 'bold',
-                color: '#2c3e50',
-                fontSize: { xs: '2.5rem', md: '3.5rem' }
-              }}
-            >
-              Our Menu
-            </Typography>
-          </Box>
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              color: '#7f8c8d',
-              fontWeight: 300,
-              maxWidth: '600px',
-              mx: 'auto'
-            }}
-          >
-            Discover our range of delicious desserts, made fresh daily with the finest ingredients
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography variant="h3" sx={{ fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160', mb: 1 }}>
+            Our Menu
+          </Typography>
+          <Typography sx={{ fontFamily: '"PT Serif"', color: '#666' }}>
+            Handcrafted desserts made fresh daily
           </Typography>
         </Box>
 
         {/* Category Tabs */}
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            mb: 4, 
-            borderRadius: 3,
-            overflow: 'hidden',
-            bgcolor: 'white'
-          }}
-        >
+        <Box sx={{ mb: 4 }}>
           <Tabs
             value={selectedCategory}
-            onChange={handleCategoryChange}
+            onChange={(_, v) => setSelectedCategory(v)}
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '1rem',
-                minHeight: 60,
-                px: 3,
-              },
-              '& .Mui-selected': {
-                color: '#e74c3c !important',
-              },
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#e74c3c',
-                height: 3,
-              },
+              '& .MuiTab-root': { textTransform: 'none', fontFamily: '"PT Serif"', fontSize: '0.9rem', minWidth: 'auto', px: 2 },
+              '& .Mui-selected': { color: '#b03160 !important' },
+              '& .MuiTabs-indicator': { backgroundColor: '#b03160' }
             }}
           >
-            {categories.map((category) => (
-              <Tab
-                key={category.id}
-                label={category.name}
-                value={category.id}
-              />
+            {categoryTabs.map(cat => (
+              <Tab key={cat.id} label={cat.name} value={cat.id} />
             ))}
           </Tabs>
-        </Paper>
+        </Box>
+
+        {/* Loading Skeletons */}
+        {loading && (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', md: 'repeat(4,1fr)' }, gap: 2 }}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i} sx={{ borderRadius: 2 }}>
+                <Skeleton variant="rectangular" height={160} />
+                <CardContent>
+                  <Skeleton width="70%" height={24} />
+                  <Skeleton width="40%" height={20} sx={{ mt: 1 }} />
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        )}
 
         {/* Products Grid */}
-        <Grid container spacing={2}>
-          {filteredProducts.map((product) => (
-            <Grid 
-              item
-              xs={12} 
-              sm={6} 
-              md={4} 
-              lg={2} 
-              xl={2} 
-              key={product._id}
-              sx={{
-                '@media (min-width: 1200px)': {
-                  flexBasis: '16.67%',
-                  maxWidth: '16.67%',
-                },
-              }}
-            >
-              <Paper
+        {!loading && (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', md: 'repeat(4,1fr)' }, gap: 2 }}>
+            {filteredProducts.map((product) => (
+              <Card
+                key={product._id}
                 sx={{
-                  borderRadius: 3,
+                  borderRadius: 2,
                   overflow: 'hidden',
-                  border: '2px solid #e0e0e0',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  border: '1px solid #f0e8e8',
+                  boxShadow: 'none',
+                  opacity: product.inStock ? 1 : 0.5,
                   transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                    border: '2px solid #e74c3c',
-                  },
-                }}
-              >
-              <Box
-                onClick={() => handleProductClick(product._id)}
-                onDoubleClick={() => handleProductClick(product._id)}
-                sx={{
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: '#f8f9fa',
-                  },
+                  '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 6px 16px rgba(176,49,96,0.1)' }
                 }}
               >
                 <Box sx={{ position: 'relative' }}>
                   <CardMedia
                     component="img"
                     height="160"
-                    image={product.image}
+                    image={product.image || '/images/placeholder.jpg'}
                     alt={product.name}
-                    sx={{
-                      objectFit: 'cover',
-                    }}
+                    sx={{ objectFit: 'cover' }}
                   />
-                  {product.featured && (
-                    <Chip
-                      label="Popular"
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: 12,
-                        left: 12,
-                        bgcolor: '#e74c3c',
-                        color: 'white',
-                        fontWeight: 600,
-                      }}
-                    />
+                  {!product.inStock && (
+                    <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Chip label="Sold Out" sx={{ bgcolor: 'white', fontWeight: 600 }} />
+                    </Box>
                   )}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 12,
-                      right: 12,
-                      bgcolor: 'rgba(255,255,255,0.9)',
-                      borderRadius: 1,
-                      p: 0.5,
-                    }}
-                  >
-                    {expandedProduct === product._id ? <ExpandLess /> : <ExpandMore />}
-                  </Box>
+                  {product.featured && product.inStock && (
+                    <Chip label="Popular" size="small" sx={{ position: 'absolute', top: 8, left: 8, bgcolor: '#b03160', color: 'white', fontSize: '0.7rem' }} />
+                  )}
                 </Box>
 
-                <Box sx={{ p: 1.5 }}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      fontWeight: 700,
-                      color: '#2c3e50',
-                      mb: 1,
-                      fontSize: '1.1rem',
-                      lineHeight: 1.3,
-                    }}
-                  >
+                <CardContent sx={{ p: 2 }}>
+                  <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.9rem', color: '#333', mb: 0.5, lineHeight: 1.3 }}>
                     {product.name}
                   </Typography>
-                  
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#7f8c8d',
-                      mb: 2,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      fontSize: '0.9rem',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {product.description}
-                  </Typography>
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontWeight: 700,
-                        color: '#e74c3c',
-                        fontSize: '1.2rem',
-                      }}
-                    >
-                      From £{product.price.toFixed(2)}
+
+                  {product.description && (
+                    <Typography sx={{ fontFamily: '"PT Serif"', color: '#999', fontSize: '0.75rem', mb: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {product.description}
                     </Typography>
-                    
-                    <Button
-                      variant="contained"
-                      size="medium"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCustomizeProduct(product);
-                      }}
-                      sx={{
-                        bgcolor: '#e74c3c',
-                        '&:hover': {
-                          bgcolor: '#c0392b',
-                        },
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        px: 2,
-                        py: 1,
-                        borderRadius: 2,
-                      }}
-                    >
-                      Customize
-                    </Button>
-                  </Box>
-                </Box>
-              </Box>
+                  )}
 
-              <Collapse in={expandedProduct === product._id}>
-                <Box sx={{ p: 2, pt: 0, bgcolor: '#fafafa' }}>
                   {/* Sizes */}
-                  {product.sizes && product.sizes.length > 0 && (
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2c3e50' }}>
-                        Choose Size:
-                      </Typography>
-                      <List dense>
-                        {product.sizes.map((size) => (
-                          <ListItem
-                            key={size.name}
-                            sx={{
-                              bgcolor: 'white',
-                              borderRadius: 2,
-                              mb: 1,
-                              border: '1px solid #e0e0e0',
-                              flexDirection: { xs: 'column', sm: 'row' },
-                              alignItems: { xs: 'stretch', sm: 'center' },
-                              py: 2,
-                            }}
-                          >
-                            <Box sx={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center',
-                              width: '100%',
-                              flexDirection: { xs: 'column', sm: 'row' },
-                              gap: { xs: 1, sm: 0 }
-                            }}>
-                              <ListItemText
-                                primary={size.name}
-                                sx={{ 
-                                  flexGrow: 1,
-                                  textAlign: { xs: 'center', sm: 'left' }
-                                }}
-                              />
-                              <Typography
-                                variant="h6"
-                                sx={{ 
-                                  color: '#000000 !important', 
-                                  fontWeight: '900 !important', 
-                                  fontSize: '1.3rem !important',
-                                  fontFamily: 'Arial, sans-serif !important',
-                                  mr: { xs: 0, sm: 2 },
-                                  mb: { xs: 1, sm: 0 }
-                                }}
-                              >
-                                £{size.price.toFixed(2)}
-                              </Typography>
-                              <Button
-                                variant="contained"
-                                size="small"
-                                startIcon={<Add />}
-                                onClick={() => handleQuickAdd(product, undefined, size)}
-                                sx={{
-                                  bgcolor: '#e74c3c',
-                                  '&:hover': { bgcolor: '#c0392b' },
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  minWidth: { xs: '100%', sm: 'auto' }
-                                }}
-                              >
-                                Add
-                              </Button>
-                            </Box>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </Box>
-                  )}
-
-                  {/* Flavors */}
-                  {product.flavors && product.flavors.length > 0 && (
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2c3e50' }}>
-                        Available Flavors:
-                      </Typography>
-                      <List dense>
-                        {product.flavors.map((flavor) => (
-                          <Box
-                            key={flavor}
-                            sx={{
-                              bgcolor: 'white',
-                              borderRadius: 2,
-                              mb: 1,
-                              border: '1px solid #e0e0e0',
-                              p: 2,
-                            }}
-                          >
-                            <Box sx={{ mb: 1 }}>
-                              <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
-                                {flavor}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography
-                                variant="h6"
-                                sx={{ 
-                                  color: '#000000', 
-                                  fontWeight: 900, 
-                                  fontSize: '1.2rem'
-                                }}
-                              >
-                                £{product.price.toFixed(2)}
-                              </Typography>
-                              <Button
-                                variant="contained"
-                                size="small"
-                                startIcon={<Add />}
-                                onClick={() => handleQuickAdd(product, flavor)}
-                                sx={{
-                                  bgcolor: '#e74c3c',
-                                  '&:hover': { bgcolor: '#c0392b' },
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                }}
-                              >
-                                Add
-                              </Button>
-                            </Box>
+                  {product.sizes && product.sizes.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {product.sizes.map(size => (
+                        <Box key={size.name} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Box>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#666' }}>{size.name}</Typography>
+                            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 600, color: '#b03160', fontSize: '0.9rem' }}>
+                              £{size.price.toFixed(2)}
+                            </Typography>
                           </Box>
-                        ))}
-                      </List>
-                    </Box>
-                  )}
-
-                  {/* Default option if no flavors or sizes */}
-                  {(!product.flavors || product.flavors.length === 0) && 
-                   (!product.sizes || product.sizes.length === 0) && (
-                    <Box>
-                      <ListItem
-                        sx={{
-                          bgcolor: 'white',
-                          borderRadius: 2,
-                          border: '1px solid #e0e0e0',
-                          flexDirection: { xs: 'column', sm: 'row' },
-                          alignItems: { xs: 'stretch', sm: 'center' },
-                          py: 2,
-                        }}
-                      >
-                        <Box sx={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          width: '100%',
-                          flexDirection: { xs: 'column', sm: 'row' },
-                          gap: { xs: 1, sm: 0 }
-                        }}>
-                          <ListItemText
-                            primary="Standard"
-                            sx={{ 
-                              flexGrow: 1,
-                              textAlign: { xs: 'center', sm: 'left' }
-                            }}
-                          />
-                          <Typography
-                            variant="h6"
-                            sx={{ 
-                              color: '#000000 !important', 
-                              fontWeight: '900 !important', 
-                              fontSize: '1.3rem !important',
-                              fontFamily: 'Arial, sans-serif !important',
-                              mr: { xs: 0, sm: 2 },
-                              mb: { xs: 1, sm: 0 }
-                            }}
-                          >
-                            £{product.price.toFixed(2)}
-                          </Typography>
                           <Button
-                            variant="contained"
                             size="small"
-                            startIcon={<Add />}
-                            onClick={() => handleQuickAdd(product)}
-                            sx={{
-                              bgcolor: '#e74c3c',
-                              '&:hover': { bgcolor: '#c0392b' },
-                              textTransform: 'none',
-                              fontWeight: 600,
-                              minWidth: { xs: '100%', sm: 'auto' }
-                            }}
+                            onClick={() => handleAddToCart(product, size)}
+                            disabled={!product.inStock}
+                            sx={{ minWidth: 'auto', bgcolor: '#b03160', color: 'white', borderRadius: '100px', px: 1.5, py: 0.3, fontSize: '0.7rem', '&:hover': { bgcolor: '#9e3a58' }, boxShadow: 'none' }}
                           >
                             Add
                           </Button>
                         </Box>
-                      </ListItem>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 600, color: '#b03160', fontSize: '1rem' }}>
+                        £{product.price.toFixed(2)}
+                      </Typography>
+                      <Button
+                        size="small"
+                        startIcon={<Add sx={{ fontSize: '0.9rem' }} />}
+                        onClick={() => handleAddToCart(product)}
+                        disabled={!product.inStock}
+                        sx={{ bgcolor: '#b03160', color: 'white', borderRadius: '100px', textTransform: 'none', fontFamily: '"PT Serif"', fontSize: '0.75rem', px: 1.5, py: 0.4, boxShadow: 'none', '&:hover': { bgcolor: '#9e3a58' } }}
+                      >
+                        Add
+                      </Button>
                     </Box>
                   )}
-                </Box>
-              </Collapse>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-
-        {filteredProducts.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography variant="h5" sx={{ color: '#7f8c8d', mb: 2 }}>
-              No items found in this category
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#95a5a6' }}>
-              Try selecting a different category or check back later for new items!
-            </Typography>
+                </CardContent>
+              </Card>
+            ))}
           </Box>
         )}
 
-        {/* Customization Modal */}
-        {selectedProduct && (
-          selectedProduct.category === 'ice-cream' ? (
-            <IceCreamCustomization
-              open={customizationOpen}
-              onClose={() => setCustomizationOpen(false)}
-              product={selectedProduct}
-              onAddToCart={handleAddToCart}
-            />
-          ) : (
-            <ProductCustomization
-              open={customizationOpen}
-              onClose={() => setCustomizationOpen(false)}
-              product={selectedProduct}
-              onAddToCart={handleAddToCart}
-            />
-          )
+        {!loading && filteredProducts.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography sx={{ color: '#999', fontFamily: '"PT Serif"' }}>No items in this category yet</Typography>
+          </Box>
         )}
-        
-        <Snackbar
-          open={showConfirmation}
-          autoHideDuration={3000}
-          onClose={() => setShowConfirmation(false)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-          sx={{ zIndex: 9999 }}
-        >
-          <Alert 
-            onClose={() => setShowConfirmation(false)} 
-            severity="success" 
-            sx={{ 
-              width: '100%',
-              fontSize: '1.1rem',
-              fontWeight: 600
-            }}
-          >
-            ✅ {addedItemName} added to cart!
-          </Alert>
-        </Snackbar>
       </Container>
+
+      <Snackbar open={showConfirmation} autoHideDuration={2500} onClose={() => setShowConfirmation(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ zIndex: 9999 }}>
+        <Alert onClose={() => setShowConfirmation(false)} severity="success" sx={{ width: '100%' }}>
+          {addedItemName} added to cart
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

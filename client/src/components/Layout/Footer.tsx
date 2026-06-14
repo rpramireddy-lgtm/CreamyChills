@@ -1,111 +1,72 @@
 import React from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Link,
-  IconButton,
-} from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
-import { Facebook, Instagram, Twitter } from '@mui/icons-material';
+import { Box, Container, Typography, IconButton } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   return (
-    <Box
-      component="footer"
-      sx={{
-        backgroundColor: 'grey.900',
-        color: 'white',
-        py: 4,
-        mt: 'auto',
-      }}
-    >
+    <Box sx={{ bgcolor: '#b03160', color: 'white', py: 5 }}>
       <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 22%' } }}>
-            <Typography variant="h6" gutterBottom>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4, mb: 4 }}>
+          {/* Brand */}
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '1.3rem', mb: 1 }}>
               Creamy Chills
             </Typography>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Your favorite dessert destination. Fresh, delicious, and made with love.
+            <Typography sx={{ fontFamily: '"PT Serif"', fontSize: '0.9rem', opacity: 0.8, lineHeight: 1.6 }}>
+              Premium handcrafted desserts in Broxburn.
             </Typography>
-            <Box>
-              <IconButton color="inherit" size="small">
-                <Facebook />
-              </IconButton>
-              <IconButton color="inherit" size="small">
-                <Instagram />
-              </IconButton>
-              <IconButton color="inherit" size="small">
-                <Twitter />
-              </IconButton>
-            </Box>
           </Box>
-          
-          <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 22%' } }}>
-            <Typography variant="h6" gutterBottom>
-              Quick Links
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Link component={RouterLink} to="/" color="inherit" underline="hover">
-                Home
-              </Link>
-              <Link component={RouterLink} to="/products" color="inherit" underline="hover">
-                Products
-              </Link>
-              <Link component={RouterLink} to="/cart" color="inherit" underline="hover">
-                Cart
-              </Link>
-            </Box>
+
+          {/* Links */}
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.9rem', mb: 1.5 }}>Menu</Typography>
+            {[
+              { label: 'Order Online', path: '/products' },
+              { label: 'About Us', path: '/about' },
+              { label: 'Find Us', path: '/find-us' },
+              { label: 'My Account', path: '/profile' },
+            ].map(link => (
+              <Typography key={link.path} component={Link} to={link.path} sx={{ display: 'block', fontFamily: '"PT Serif"', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', textDecoration: 'none', mb: 0.5, '&:hover': { color: 'white' } }}>
+                {link.label}
+              </Typography>
+            ))}
           </Box>
-          
-          <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 22%' } }}>
-            <Typography variant="h6" gutterBottom>
-              Categories
+
+          {/* Hours */}
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.9rem', mb: 1.5 }}>Opening Hours</Typography>
+            <Typography sx={{ fontFamily: '"PT Serif"', fontSize: '0.85rem', opacity: 0.8, lineHeight: 1.8 }}>
+              Mon – Thu: 12pm – 10pm<br />
+              Fri – Sat: 12pm – 11pm<br />
+              Sun: 12pm – 10pm
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Link component={RouterLink} to="/products" state={{ category: 'ice-cream' }} color="inherit" underline="hover">
-                Ice Cream
-              </Link>
-              <Link component={RouterLink} to="/products" state={{ category: 'waffle' }} color="inherit" underline="hover">
-                Waffles
-              </Link>
-              <Link component={RouterLink} to="/products" state={{ category: 'cake' }} color="inherit" underline="hover">
-                Cakes
-              </Link>
-              <Link component={RouterLink} to="/products" state={{ category: 'milkshake' }} color="inherit" underline="hover">
-                Milkshakes
-              </Link>
-            </Box>
           </Box>
-          
-          <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 22%' } }}>
-            <Typography variant="h6" gutterBottom>
-              Contact Info
+
+          {/* Contact */}
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.9rem', mb: 1.5 }}>Visit Us</Typography>
+            <Typography sx={{ fontFamily: '"PT Serif"', fontSize: '0.85rem', opacity: 0.8, lineHeight: 1.8 }}>
+              60 East Main Street<br />
+              Broxburn, EH52 5EE
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              📍 <Link 
-                href="https://maps.google.com/?q=60+East+Main+Street,+Broxburn,+West+Lothian,+EH52+5EG" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                color="inherit" 
-                underline="hover"
-              >
-                60 East Main Street, Broxburn, West Lothian, EH52 5EG
-              </Link>
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              📞 (555) 123-4567
-            </Typography>
-            <Typography variant="body2">
-              ✉️ hello@creamychills.com
-            </Typography>
+            {/* Social */}
+            <Box sx={{ mt: 2, display: 'flex', gap: 1.5 }}>
+              <Typography component="a" href="https://www.instagram.com/creamychills" target="_blank" rel="noopener" sx={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.85rem', '&:hover': { color: 'white' } }}>
+                Instagram
+              </Typography>
+              <Typography component="a" href="https://www.facebook.com/creamychills" target="_blank" rel="noopener" sx={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.85rem', '&:hover': { color: 'white' } }}>
+                Facebook
+              </Typography>
+              <Typography component="a" href="https://www.tiktok.com/@creamychills" target="_blank" rel="noopener" sx={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.85rem', '&:hover': { color: 'white' } }}>
+                TikTok
+              </Typography>
+            </Box>
           </Box>
         </Box>
-        
-        <Box sx={{ mt: 4, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-          <Typography variant="body2" textAlign="center">
-            © 2025 Creamy Chills. All rights reserved.
+
+        <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.15)', pt: 3, textAlign: 'center' }}>
+          <Typography sx={{ fontFamily: '"PT Serif"', fontSize: '0.8rem', opacity: 0.5 }}>
+            © {new Date().getFullYear()} Creamy Chills. All rights reserved.
           </Typography>
         </Box>
       </Container>

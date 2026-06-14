@@ -20,6 +20,11 @@ import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import About from './pages/About';
 import FindUs from './pages/FindUs';
+import OrderTracking from './pages/OrderTracking';
+import DriverDashboard from './pages/DriverDashboard';
+import NotFound from './pages/NotFound';
+import KitchenDisplay from './pages/KitchenDisplay';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode; requiredRole?: string }) => {
@@ -52,6 +57,17 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/about" element={<About />} />
       <Route path="/find-us" element={<FindUs />} />
+      <Route path="/track/:orderId" element={<OrderTracking />} />
+      <Route path="/driver" element={
+        <ProtectedRoute>
+          <DriverDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/kitchen" element={
+        <ProtectedRoute>
+          <KitchenDisplay />
+        </ProtectedRoute>
+      } />
       <Route path="/profile" element={
         <ProtectedRoute>
           <Profile />
@@ -67,13 +83,14 @@ function AppRoutes() {
           <AdminDashboard />
         </ProtectedRoute>
       } />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
 
 function App() {
   return (
+    <ErrorBoundary>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
@@ -90,6 +107,7 @@ function App() {
         </CartProvider>
       </AuthProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

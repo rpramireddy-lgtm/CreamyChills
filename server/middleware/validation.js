@@ -22,7 +22,7 @@ const registerValidation = [
     .withMessage('Name contains invalid characters'),
   body('email')
     .isEmail()
-    .normalizeEmail()
+    .normalizeEmail({ gmail_remove_dots: false })
     .withMessage('Valid email is required'),
   body('password')
     .isLength({ min: 8 })
@@ -39,7 +39,7 @@ const registerValidation = [
 const loginValidation = [
   body('email')
     .isEmail()
-    .normalizeEmail()
+    .normalizeEmail({ gmail_remove_dots: false })
     .withMessage('Valid email is required'),
   body('password')
     .notEmpty()

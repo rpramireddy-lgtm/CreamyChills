@@ -17,7 +17,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { ordersAPI, paymentsAPI } from '../services/api';
+import { ordersAPI, paymentsAPI, discountsAPI } from '../services/api';
 import SquareCheckout from '../components/Checkout/SquareCheckout';
 
 const Checkout: React.FC = () => {
@@ -30,22 +30,33 @@ const Checkout: React.FC = () => {
     email: user?.email || '',
     phone: '',
     deliveryMethod: 'pickup',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-    },
+    address: { street: '', city: '', state: '', zipCode: '' },
     notes: '',
   });
   const [orderId, setOrderId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'details' | 'payment'>('details');
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountResult, setDiscountResult] = useState<any>(null);
+  const [discountError, setDiscountError] = useState('');
 
   const subtotal = cartState.total;
   const deliveryFee = formData.deliveryMethod === 'delivery' ? 3.99 : 0;
-  const tax = Math.round(subtotal * 0.2 * 100) / 100;
-  const total = Math.round((subtotal + deliveryFee + tax) * 100) / 100;
+  const discount = discountResult?.discountAmount || 0;
+  const tax = Math.round((subtotal - discount) * 0.2 * 100) / 100;
+  const total = Math.round((subtotal - discount + deliveryFee + tax) * 100) / 100;
+
+  const handleApplyDiscount = async () => {
+    setDiscountError('');
+    setDiscountResult(null);
+    if (!discountCode.trim()) return;
+    try {
+      const res = await discountsAPI.validate(discountCode, subtotal);
+      setDiscountResult(res.data);
+    } catch (e: any) {
+      setDiscountError(e.response?.data?.message || 'Invalid code');
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -260,6 +271,29 @@ const Checkout: React.FC = () => {
             ))}
             
             <Divider sx={{ my: 2 }} />
+
+            {/* Discount Code */}
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  size="small"
+                  placeholder="Discount code"
+                  value={discountCode}
+                  onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                  sx={{ flex: 1 }}
+                />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handleApplyDiscount}
+                  sx={{ borderColor: '#b03160', color: '#b03160', textTransform: 'none', borderRadius: '100px' }}
+                >
+                  Apply
+                </Button>
+              </Box>
+              {discountError && <Typography sx={{ color: 'error.main', fontSize: '0.8rem', mt: 0.5 }}>{discountError}</Typography>}
+              {discountResult && <Typography sx={{ color: '#4caf50', fontSize: '0.8rem', mt: 0.5 }}>✓ {discountResult.description || `${discountResult.value}${discountResult.type === 'percentage' ? '%' : '£'} off`}</Typography>}
+            </Box>
             
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography>Subtotal:</Typography>
@@ -270,6 +304,13 @@ const Checkout: React.FC = () => {
               <Typography>VAT (20%):</Typography>
               <Typography>£{tax.toFixed(2)}</Typography>
             </Box>
+
+            {discount > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography sx={{ color: '#4caf50' }}>Discount:</Typography>
+                <Typography sx={{ color: '#4caf50' }}>-£{discount.toFixed(2)}</Typography>
+              </Box>
+            )}
             
             {deliveryFee > 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>

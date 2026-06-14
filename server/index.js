@@ -98,6 +98,8 @@ app.use('/api/discounts', require('./routes/discounts'));
 app.use('/api/loyalty', require('./routes/loyalty'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/images', require('./routes/images'));
+app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/staff', require('./routes/staff'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/admin', require('./routes/admin'));

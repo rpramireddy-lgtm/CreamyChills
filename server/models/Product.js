@@ -34,7 +34,9 @@ const productSchema = new mongoose.Schema({
   nutritionalInfo: {
     calories: Number,
     allergens: [String]
-  }
+  },
+  allergens: [{ type: String, enum: ['Dairy', 'Nuts', 'Gluten', 'Eggs', 'Soya', 'Vegan', 'Vegetarian'] }],
+  preparationTime: { type: Number, default: 10 } // minutes
 }, {
   timestamps: true
 });

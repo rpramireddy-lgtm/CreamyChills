@@ -51,6 +51,7 @@ const orderSchema = new mongoose.Schema({
   paymentIntentId: String, // Stripe payment intent ID
   
   estimatedDeliveryTime: Date,
+  scheduledFor: Date, // null = ASAP, date = scheduled order
   notes: String
 }, {
   timestamps: true

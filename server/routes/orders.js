@@ -2,15 +2,17 @@ const express = require('express');
 const Order = require('../models/Order');
 const { auth, staffAuth, optionalAuth } = require('../middleware/auth');
 const { createOrderValidation, mongoIdParam } = require('../middleware/validation');
+const { checkOpeningHours } = require('../middleware/openingHours');
+const { checkDeliveryZone } = require('../middleware/deliveryZone');
 const emailService = require('../services/emailService');
+const { emitNewOrder } = require('../services/socketService');
 const router = express.Router();
 
 // Create new order
-router.post('/', optionalAuth, createOrderValidation, async (req, res) => {
+router.post('/', optionalAuth, checkOpeningHours, checkDeliveryZone, createOrderValidation, async (req, res) => {
   try {
-    const { items, deliveryMethod, deliveryAddress, guestInfo, notes } = req.body;
+    const { items, deliveryMethod, deliveryAddress, guestInfo, notes, scheduledFor } = req.body;
     
-    // Server-side price validation - never trust client prices in production
     let subtotal = 0;
     for (const item of items) {
       subtotal += item.price * item.quantity;
@@ -21,10 +23,18 @@ router.post('/', optionalAuth, createOrderValidation, async (req, res) => {
       }
     }
     
-    const tax = Math.round(subtotal * 0.2 * 100) / 100; // 20% VAT UK
-    const deliveryFee = deliveryMethod === 'delivery' ? 3.99 : 0;
+    const tax = Math.round(subtotal * 0.2 * 100) / 100;
+    const deliveryFee = deliveryMethod === 'delivery' ? (req.deliveryFee || 3.99) : 0;
     const total = Math.round((subtotal + tax + deliveryFee) * 100) / 100;
     
+    // Determine estimated time
+    let estimatedTime;
+    if (scheduledFor) {
+      estimatedTime = new Date(scheduledFor);
+    } else {
+      estimatedTime = new Date(Date.now() + (deliveryMethod === 'delivery' ? 45 : 20) * 60000);
+    }
+
     const orderData = {
       items,
       subtotal,
@@ -34,7 +44,8 @@ router.post('/', optionalAuth, createOrderValidation, async (req, res) => {
       deliveryMethod,
       deliveryAddress: deliveryMethod === 'delivery' ? deliveryAddress : undefined,
       notes: notes ? notes.substring(0, 500) : undefined,
-      estimatedDeliveryTime: new Date(Date.now() + (deliveryMethod === 'delivery' ? 45 : 20) * 60000)
+      scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
+      estimatedDeliveryTime: estimatedTime
     };
     
     if (req.user) {
@@ -58,6 +69,9 @@ router.post('/', optionalAuth, createOrderValidation, async (req, res) => {
     if (customerEmail) {
       emailService.sendOrderConfirmation(order, customerEmail);
     }
+
+    // Notify admin in real-time
+    emitNewOrder(order);
     
     res.status(201).json(order);
   } catch (error) {
