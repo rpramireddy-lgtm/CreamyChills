@@ -1,0 +1,8 @@
+name,description,price,category,image,featured,inStock,sizes
+Cappuccino,Classic Italian cappuccino,3.99,drink,/images/products/cappuccino.jpg,true,true,"Small:3.99,Medium:4.49,Large:4.99"
+Hot Chocolate,Rich Belgian hot chocolate,4.49,drink,/images/products/hot-chocolate.jpg,true,true,"Small:4.49,Medium:4.99,Large:5.49"
+Chai Latte,Spiced chai tea latte,4.29,drink,/images/products/chai-latte.jpg,false,true,"Small:4.29,Medium:4.79,Large:5.29"
+Matcha Latte,Premium Japanese matcha latte,4.99,drink,/images/products/matcha-latte.jpg,true,true,"Small:4.99,Medium:5.49,Large:5.99"
+Iced Coffee,Cold brew iced coffee,3.49,drink,/images/products/iced-coffee.jpg,true,true,"Small:3.49,Medium:3.99,Large:4.49"
+Iced Tea,Refreshing iced tea,2.99,drink,/images/products/iced-tea.jpg,false,true,"Small:2.99,Medium:3.49,Large:3.99"
+Lemonade,Fresh squeezed lemonade,3.49,drink,/images/products/lemonade.jpg,false,true,"Small:3.49,Medium:3.99,Large:4.49"

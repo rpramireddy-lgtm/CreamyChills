@@ -1,0 +1,10 @@
+name,description,price,category,image,featured,inStock,sizes
+Strawberry Milkshake,Fresh strawberry blended with ice cream,5.99,milkshake,/images/products/strawberry-milkshake.jpg,true,true,"Small:5.99,Medium:6.99,Large:7.99"
+Chocolate Milkshake,Rich chocolate milkshake,5.99,milkshake,/images/products/chocolate-cake.jpg,true,true,"Small:5.99,Medium:6.99,Large:7.99"
+Vanilla Milkshake,Classic vanilla milkshake,5.99,milkshake,/images/products/vanilla-shake.jpg,true,true,"Small:5.99,Medium:6.99,Large:7.99"
+Banana Milkshake,Creamy banana milkshake,6.49,milkshake,/images/products/banana-split-shake.jpg,false,true,"Small:6.49,Medium:7.49,Large:8.49"
+Oreo Milkshake,Cookies and cream milkshake,6.99,milkshake,/images/products/cookies-cream.jpg,true,true,"Small:6.99,Medium:7.99,Large:8.99"
+Peanut Butter Milkshake,Rich peanut butter milkshake,6.99,milkshake,/images/products/chocolate-pb-shake.jpg,false,true,"Small:6.99,Medium:7.99,Large:8.99"
+Coffee Milkshake,Espresso blended milkshake,6.49,milkshake,/images/products/coffee-shake.jpg,false,true,"Small:6.49,Medium:7.49,Large:8.49"
+Unicorn Milkshake,Colorful rainbow milkshake with whipped cream,7.99,milkshake,/images/products/unicorn-milkshake.jpg,true,true,"Small:7.99,Medium:8.99,Large:9.99"
+Birthday Cake Milkshake,Vanilla cake batter milkshake with sprinkles,7.49,milkshake,/images/products/birthday-shake.jpg,true,true,"Small:7.49,Medium:8.49,Large:9.49"

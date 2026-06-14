@@ -1,0 +1,29 @@
+{
+  "short_name": "Creamy Chills",
+  "name": "Creamy Chills - Premium Desserts",
+  "description": "Order premium handcrafted desserts online from Creamy Chills, Broxburn",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#b03160",
+  "background_color": "#fff8f4",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["food", "shopping"]
+}

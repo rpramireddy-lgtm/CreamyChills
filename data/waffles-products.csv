@@ -1,0 +1,8 @@
+name,description,price,category,image,featured,inStock
+Belgian Waffle,Classic Belgian waffle with maple syrup,6.99,waffle,/images/products/belgian-waffle.jpg,true,true
+Chocolate Waffle,Waffle with chocolate sauce and whipped cream,7.99,waffle,/images/products/chocolate-brownie.jpg,true,true
+Strawberry Waffle,Fresh strawberries with whipped cream,8.49,waffle,/images/products/strawberry-waffle.jpg,true,true
+Nutella Waffle,Waffle topped with Nutella spread,8.99,waffle,/images/products/nutella-waffle.jpg,true,true
+Blueberry Waffle,Blueberries with maple syrup,8.49,waffle,/images/products/blueberry-waffle.jpg,false,true
+Red Velvet Waffle,Red velvet waffle with cream cheese frosting,9.49,waffle,/images/products/red-velvet-waffle.jpg,true,true
+Caramel Apple Waffle,Caramelized apples with cinnamon,8.99,waffle,/images/products/caramel-apple-waffle.jpg,false,true
