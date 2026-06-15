@@ -194,4 +194,16 @@ export const imagesAPI = {
   delete: (filename: string) => api.delete(`/images/${filename}`),
 };
 
+// Favourites API
+export const favouritesAPI = {
+  get: () => api.get('/favourites/favourites'),
+  reorder: (orderId: string) => api.get(`/favourites/reorder/${orderId}`),
+};
+
+// Referrals API
+export const referralsAPI = {
+  getCode: () => api.get('/referrals/my-code'),
+  apply: (code: string) => api.post('/referrals/apply', { code }),
+};
+
 export default api;

@@ -25,6 +25,10 @@ import DriverDashboard from './pages/DriverDashboard';
 import NotFound from './pages/NotFound';
 import KitchenDisplay from './pages/KitchenDisplay';
 import ErrorBoundary from './components/ErrorBoundary';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import CookieConsent from './components/CookieConsent';
+import PromoBanner from './components/PromoBanner';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode; requiredRole?: string }) => {
@@ -57,6 +61,8 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/about" element={<About />} />
       <Route path="/find-us" element={<FindUs />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/track/:orderId" element={<OrderTracking />} />
       <Route path="/driver" element={
         <ProtectedRoute>
@@ -102,6 +108,8 @@ function App() {
                 <AppRoutes />
               </main>
               <Footer />
+              <CookieConsent />
+              <PromoBanner />
             </div>
           </Router>
         </CartProvider>

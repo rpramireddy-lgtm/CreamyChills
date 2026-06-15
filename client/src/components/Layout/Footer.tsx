@@ -25,6 +25,8 @@ const Footer: React.FC = () => {
               { label: 'About Us', path: '/about' },
               { label: 'Find Us', path: '/find-us' },
               { label: 'My Account', path: '/profile' },
+              { label: 'Privacy Policy', path: '/privacy' },
+              { label: 'Terms & Conditions', path: '/terms' },
             ].map(link => (
               <Typography key={link.path} component={Link} to={link.path} sx={{ display: 'block', fontFamily: '"PT Serif"', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', textDecoration: 'none', mb: 0.5, '&:hover': { color: 'white' } }}>
                 {link.label}

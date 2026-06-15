@@ -100,6 +100,8 @@ app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/images', require('./routes/images'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/staff', require('./routes/staff'));
+app.use('/api/favourites', require('./routes/favourites'));
+app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/admin', require('./routes/admin'));
