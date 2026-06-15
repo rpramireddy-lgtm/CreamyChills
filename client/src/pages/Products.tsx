@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Card, CardMedia, CardContent, Button, Chip, Tabs, Tab, Snackbar, Alert, Skeleton } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Container, Typography, Box, Card, CardMedia, CardContent, Button, Chip, Tabs, Tab, Snackbar, Alert, Skeleton, TextField, InputAdornment } from '@mui/material';
+import { Add, Search as SearchIcon } from '@mui/icons-material';
 import { useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { productsAPI, categoriesAPI } from '../services/api';
+import ModifierModal from '../components/ModifierModal';
 import SEO from '../components/SEO';
 
 interface Product {
@@ -16,6 +17,7 @@ interface Product {
   featured: boolean;
   inStock: boolean;
   sizes?: Array<{ name: string; price: number }>;
+  allergens?: string[];
 }
 
 const Products: React.FC = () => {
@@ -26,6 +28,8 @@ const Products: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [addedItemName, setAddedItemName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modifierProduct, setModifierProduct] = useState<any>(null);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -53,21 +57,14 @@ const Products: React.FC = () => {
     }
   };
 
-  const filteredProducts = selectedCategory === 'all'
-    ? products
-    : products.filter(p => p.category === selectedCategory);
+  const filteredProducts = products
+    .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
+    .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleAddToCart = (product: Product, size?: { name: string; price: number }) => {
     const price = size ? size.price : product.price;
     const name = size ? `${product.name} - ${size.name}` : product.name;
-
-    addToCart({
-      id: `${product._id}-${size?.name || 'standard'}`,
-      name,
-      price,
-      image: product.image,
-      customizations: size ? [{ name: 'Size', value: size.name, additionalPrice: size.price - product.price }] : []
-    });
+    addToCart({ id: `${product._id}-${size?.name || 'standard'}`, name, price, image: product.image, customizations: size ? [{ name: 'Size', value: size.name, additionalPrice: size.price - product.price }] : [] });
     setAddedItemName(name);
     setShowConfirmation(true);
   };
@@ -99,6 +96,19 @@ const Products: React.FC = () => {
           <Typography sx={{ fontFamily: '"PT Serif"', color: '#666' }}>
             Handcrafted desserts made fresh daily
           </Typography>
+        </Box>
+
+        {/* Search */}
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="Search menu..."
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#b03160' }} /></InputAdornment> }}
+            sx={{ bgcolor: 'white', borderRadius: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+          />
         </Box>
 
         {/* Category Tabs */}
@@ -174,6 +184,15 @@ const Products: React.FC = () => {
                     {product.name}
                   </Typography>
 
+                  {/* Allergen badges */}
+                  {product.allergens && product.allergens.length > 0 && (
+                    <Box sx={{ display: 'flex', gap: 0.3, flexWrap: 'wrap', mb: 1 }}>
+                      {product.allergens.slice(0, 3).map((a: string) => (
+                        <Chip key={a} label={a} size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: a === 'Nuts' ? '#fff3e0' : a === 'Dairy' ? '#e3f2fd' : a === 'Gluten' ? '#fce4ec' : '#f5f5f5' }} />
+                      ))}
+                    </Box>
+                  )}
+
                   {product.description && (
                     <Typography sx={{ fontFamily: '"PT Serif"', color: '#999', fontSize: '0.75rem', mb: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {product.description}
@@ -210,7 +229,7 @@ const Products: React.FC = () => {
                       <Button
                         size="small"
                         startIcon={<Add sx={{ fontSize: '0.9rem' }} />}
-                        onClick={() => handleAddToCart(product)}
+                        onClick={() => setModifierProduct(product)}
                         disabled={!product.inStock}
                         sx={{ bgcolor: '#b03160', color: 'white', borderRadius: '100px', textTransform: 'none', fontFamily: '"PT Serif"', fontSize: '0.75rem', px: 1.5, py: 0.4, boxShadow: 'none', '&:hover': { bgcolor: '#9e3a58' } }}
                       >
@@ -230,6 +249,13 @@ const Products: React.FC = () => {
           </Box>
         )}
       </Container>
+
+      <ModifierModal
+        open={!!modifierProduct}
+        onClose={() => setModifierProduct(null)}
+        product={modifierProduct}
+        onAdded={(name) => { setAddedItemName(name); setShowConfirmation(true); }}
+      />
 
       <Snackbar open={showConfirmation} autoHideDuration={2500} onClose={() => setShowConfirmation(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ zIndex: 9999 }}>
         <Alert onClose={() => setShowConfirmation(false)} severity="success" sx={{ width: '100%' }}>
