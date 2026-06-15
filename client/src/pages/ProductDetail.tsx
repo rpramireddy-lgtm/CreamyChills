@@ -1,152 +1,100 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Container,
-  Grid,
-  Typography,
-  Button,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-} from '@mui/material';
+import { Container, Typography, Box, Button, Chip, Divider } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { productsAPI } from '../services/api';
-import { useCart } from '../context/CartContext';
-
-interface Product {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  flavors?: string[];
-  toppings?: string[];
-  inStock: boolean;
-}
+import ModifierModal from '../components/ModifierModal';
+import SEO from '../components/SEO';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { addToCart } = useCart();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [addedName, setAddedName] = useState('');
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) return;
-      
-      try {
-        const response = await productsAPI.getById(id);
-        setProduct(response.data);
-      } catch (error) {
-        console.error('Error fetching product:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
+    if (id) {
+      productsAPI.getById(id).then(res => setProduct(res.data)).catch(() => {}).finally(() => setLoading(false));
+    }
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    
-    addToCart({
-      id: product._id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-    });
-  };
-
-  if (loading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography>Loading product...</Typography>
-      </Container>
-    );
-  }
-
-  if (!product) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4">Product not found</Typography>
-      </Container>
-    );
-  }
+  if (loading) return <Box sx={{ textAlign: 'center', py: 8 }}><Typography>Loading...</Typography></Box>;
+  if (!product) return <Box sx={{ textAlign: 'center', py: 8 }}><Typography variant="h5">Product not found</Typography></Box>;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={6}>
-          <Box
-            component="img"
-            src={product.image || '/images/placeholder.jpg'}
-            alt={product.name}
-            sx={{
-              width: '100%',
-              height: 400,
-              objectFit: 'cover',
-              borderRadius: 2,
-            }}
-          />
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <Typography variant="h3" component="h1" gutterBottom>
-            {product.name}
-          </Typography>
-          
-          <Typography variant="h4" color="primary" gutterBottom>
-            £{product.price.toFixed(2)}
-          </Typography>
-          
-          <Typography variant="body1" sx={{ mb: 3 }}>
-            {product.description}
-          </Typography>
+    <Box sx={{ bgcolor: '#fff8f4', minHeight: '100vh', py: 4 }}>
+      <SEO title={product.name} description={product.description} />
+      <Container maxWidth="md">
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
+          <Box sx={{ flex: 1 }}>
+            <Box
+              component="img"
+              src={product.image || '/images/placeholder.jpg'}
+              alt={product.name}
+              sx={{ width: '100%', height: { xs: 250, md: 400 }, objectFit: 'cover', borderRadius: 2 }}
+            />
+          </Box>
 
-          {product.flavors && product.flavors.length > 0 && (
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Available Flavors
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {product.flavors.map((flavor) => (
-                    <Chip key={flavor} label={flavor} variant="outlined" />
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '1.8rem', color: '#333', mb: 1 }}>
+              {product.name}
+            </Typography>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 600, color: '#b03160', fontSize: '1.4rem', mb: 2 }}>
+              £{product.price.toFixed(2)}
+            </Typography>
+            <Typography sx={{ fontFamily: '"PT Serif"', color: '#666', lineHeight: 1.7, mb: 3 }}>
+              {product.description}
+            </Typography>
+
+            {product.allergens?.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 500, mb: 1 }}>Allergens:</Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {product.allergens.map((a: string) => (
+                    <Chip key={a} label={a} size="small" variant="outlined" />
                   ))}
                 </Box>
-              </CardContent>
-            </Card>
-          )}
+              </Box>
+            )}
 
-          {product.toppings && product.toppings.length > 0 && (
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Available Toppings
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {product.toppings.map((topping) => (
-                    <Chip key={topping} label={topping} variant="outlined" />
+            {product.preparationTime && (
+              <Typography sx={{ fontSize: '0.85rem', color: '#999', mb: 3 }}>
+                ⏱ Estimated preparation: {product.preparationTime} mins
+              </Typography>
+            )}
+
+            {product.sizes?.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 500, mb: 1 }}>Available sizes:</Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {product.sizes.map((s: any) => (
+                    <Chip key={s.name} label={`${s.name} — £${s.price.toFixed(2)}`} variant="outlined" />
                   ))}
                 </Box>
-              </CardContent>
-            </Card>
-          )}
+              </Box>
+            )}
 
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleAddToCart}
-            disabled={!product.inStock}
-            sx={{ mr: 2 }}
-          >
-            {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-          </Button>
-        </Grid>
-      </Grid>
-    </Container>
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              onClick={() => setModalOpen(true)}
+              disabled={!product.inStock}
+              sx={{ bgcolor: '#b03160', '&:hover': { bgcolor: '#9e3a58' }, borderRadius: '100px', textTransform: 'none', fontFamily: '"PT Serif"', py: 1.5, boxShadow: 'none', fontSize: '1rem' }}
+            >
+              {product.inStock ? 'Add to Cart' : 'Sold Out'}
+            </Button>
+          </Box>
+        </Box>
+      </Container>
+
+      <ModifierModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        product={product}
+        onAdded={(name) => setAddedName(name)}
+      />
+    </Box>
   );
 };
 
