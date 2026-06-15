@@ -15,8 +15,7 @@ import { Add, ArrowForward } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { productsAPI } from '../services/api';
-import ProductCustomization from '../components/ProductCustomization';
-import IceCreamCustomization from '../components/IceCreamCustomization';
+import ModifierModal from '../components/ModifierModal';
 
 interface Product {
   _id: string;
@@ -32,7 +31,6 @@ interface Product {
 const Home: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [customizationOpen, setCustomizationOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [addedItemName, setAddedItemName] = useState('');
@@ -45,7 +43,7 @@ const Home: React.FC = () => {
   const fetchFeaturedProducts = async () => {
     try {
       const response = await productsAPI.getAll({ featured: true, limit: 8 });
-      setFeaturedProducts(response.data.products);
+      setFeaturedProducts(response.data.products || []);
     } catch (error) {
       console.error('Error fetching featured products:', error);
     } finally {
@@ -53,24 +51,13 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleCustomizeProduct = (product: Product) => {
-    setSelectedProduct(product);
-    setCustomizationOpen(true);
-  };
-
-  const handleAddToCart = (customizedProduct: any) => {
-    addToCart(customizedProduct);
-    setAddedItemName(customizedProduct.name);
-    setShowConfirmation(true);
-  };
-
   const categories = [
     { name: 'Ice Cream', id: 'ice-cream', image: '/images/products/IceCreams/Vanilla Ice Cream.jpg' },
     { name: 'Waffles', id: 'waffle', image: '/images/products/Waffles/Kinder Bueno Waffle.jpg' },
     { name: 'Milkshakes', id: 'milkshake', image: '/images/products/Milkshakes/Dubai Milkshake.jpg' },
     { name: 'Cakes', id: 'cake', image: '/images/products/Cakes/Dream Cake.jpg' },
-    { name: 'Sundaes', id: 'sundae', image: '/images/products/Sundaes/' },
-    { name: 'Cookie Dough', id: 'cookie-dough', image: '/images/products/Cookie Dough/' },
+    { name: 'Sundaes', id: 'sundae', image: '/images/products/Sundaes/Oreo Sundae.jpg' },
+    { name: 'Cookie Dough', id: 'cookie-dough', image: '/images/products/Cookie Dough/Nutella Cookie Dough.jpg' },
   ];
 
   return (
@@ -378,7 +365,7 @@ const Home: React.FC = () => {
                       <Button
                         variant="contained"
                         size="small"
-                        onClick={() => handleCustomizeProduct(product)}
+                        onClick={() => setSelectedProduct(product)}
                         disabled={!product.inStock}
                         sx={{
                           bgcolor: '#b03160',
@@ -483,24 +470,13 @@ const Home: React.FC = () => {
         </Container>
       </Box>
 
-      {/* Customization Modal */}
-      {selectedProduct && (
-        selectedProduct.category === 'ice-cream' ? (
-          <IceCreamCustomization
-            open={customizationOpen}
-            onClose={() => setCustomizationOpen(false)}
-            product={selectedProduct}
-            onAddToCart={handleAddToCart}
-          />
-        ) : (
-          <ProductCustomization
-            open={customizationOpen}
-            onClose={() => setCustomizationOpen(false)}
-            product={selectedProduct}
-            onAddToCart={handleAddToCart}
-          />
-        )
-      )}
+      {/* Modifier Modal */}
+      <ModifierModal
+        open={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        product={selectedProduct}
+        onAdded={(name) => { setAddedItemName(name); setShowConfirmation(true); }}
+      />
       
       <Snackbar
         open={showConfirmation}

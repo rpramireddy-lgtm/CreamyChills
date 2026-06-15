@@ -28,7 +28,13 @@ const ModifierModal: React.FC<Props> = ({ open, onClose, product, onAdded }) => 
   const fetchModifiers = async () => {
     try {
       const res = await modifiersAPI.getAll();
-      setModifierGroups(res.data || []);
+      const allGroups = res.data || [];
+      // If product has linked modifier groups, only show those. Otherwise show all.
+      if (product?.modifierGroupIds?.length > 0) {
+        setModifierGroups(allGroups.filter((g: any) => product.modifierGroupIds.includes(g._id)));
+      } else {
+        setModifierGroups(allGroups);
+      }
     } catch (e) {}
   };
 
@@ -50,8 +56,6 @@ const ModifierModal: React.FC<Props> = ({ open, onClose, product, onAdded }) => 
   const getExtrasTotal = () => {
     return Object.values(selected).flat().reduce((sum: number, m: any) => sum + (m.price || 0), 0);
   };
-
-  const totalPrice = (product.price + getExtrasTotal()) * quantity;
 
   const handleAddToCart = () => {
     const customizations = Object.entries(selected).flatMap(([group, mods]) =>
@@ -76,6 +80,8 @@ const ModifierModal: React.FC<Props> = ({ open, onClose, product, onAdded }) => 
   };
 
   if (!product) return null;
+
+  const totalPrice = (product.price + getExtrasTotal()) * quantity;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

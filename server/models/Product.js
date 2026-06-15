@@ -36,7 +36,8 @@ const productSchema = new mongoose.Schema({
     allergens: [String]
   },
   allergens: [{ type: String, enum: ['Dairy', 'Nuts', 'Gluten', 'Eggs', 'Soya', 'Vegan', 'Vegetarian'] }],
-  preparationTime: { type: Number, default: 10 } // minutes
+  preparationTime: { type: Number, default: 10 },
+  modifierGroupIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ModifierGroup' }]
 }, {
   timestamps: true
 });
