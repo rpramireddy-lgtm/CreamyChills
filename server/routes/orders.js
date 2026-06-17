@@ -5,6 +5,8 @@ const { createOrderValidation, mongoIdParam } = require('../middleware/validatio
 const { checkOpeningHours } = require('../middleware/openingHours');
 const { checkDeliveryZone } = require('../middleware/deliveryZone');
 const emailService = require('../services/emailService');
+const webhookService = require('../services/webhookService');
+const { logActivity } = require('../routes/activityLog');
 const { emitNewOrder } = require('../services/socketService');
 const router = express.Router();
 
@@ -72,6 +74,8 @@ router.post('/', optionalAuth, checkOpeningHours, checkDeliveryZone, createOrder
 
     // Notify admin in real-time
     emitNewOrder(order);
+    webhookService.notifyNewOrder(order);
+    logActivity(req.user?.id, 'order_created', 'order', order._id, `Order ${order.orderNumber} - £${order.total}`, req.ip);
     
     res.status(201).json(order);
   } catch (error) {

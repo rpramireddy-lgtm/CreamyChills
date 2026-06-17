@@ -19,6 +19,8 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { ordersAPI, paymentsAPI, discountsAPI } from '../services/api';
 import SquareCheckout from '../components/Checkout/SquareCheckout';
+import ScheduleOrderPicker from '../components/ScheduleOrderPicker';
+import TipOption from '../components/TipOption';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -39,12 +41,14 @@ const Checkout: React.FC = () => {
   const [discountCode, setDiscountCode] = useState('');
   const [discountResult, setDiscountResult] = useState<any>(null);
   const [discountError, setDiscountError] = useState('');
+  const [scheduledFor, setScheduledFor] = useState<string | null>(null);
+  const [tip, setTip] = useState(0);
 
   const subtotal = cartState.total;
   const deliveryFee = formData.deliveryMethod === 'delivery' ? 3.99 : 0;
   const discount = discountResult?.discountAmount || 0;
   const tax = Math.round((subtotal - discount) * 0.2 * 100) / 100;
-  const total = Math.round((subtotal - discount + deliveryFee + tax) * 100) / 100;
+  const total = Math.round((subtotal - discount + deliveryFee + tax + tip) * 100) / 100;
 
   const handleApplyDiscount = async () => {
     setDiscountError('');
@@ -230,6 +234,9 @@ const Checkout: React.FC = () => {
                   inputProps={{ maxLength: 500 }}
                 />
 
+                <ScheduleOrderPicker onScheduleChange={setScheduledFor} />
+                <TipOption onTipChange={setTip} />
+
                 <Button
                   type="submit"
                   variant="contained"
@@ -309,6 +316,13 @@ const Checkout: React.FC = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography sx={{ color: '#4caf50' }}>Discount:</Typography>
                 <Typography sx={{ color: '#4caf50' }}>-£{discount.toFixed(2)}</Typography>
+              </Box>
+            )}
+
+            {tip > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography>Tip:</Typography>
+                <Typography>£{tip.toFixed(2)}</Typography>
               </Box>
             )}
             
