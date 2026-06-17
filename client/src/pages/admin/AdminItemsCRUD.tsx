@@ -4,8 +4,8 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Switch, FormControlLabel,
   Alert, Tabs, Tab, Checkbox, FormGroup, Divider, InputAdornment
 } from '@mui/material';
-import { Add, Edit, Delete, ContentCopy, Search } from '@mui/icons-material';
-import { productsAPI, categoriesAPI, adminAPI, modifiersAPI } from '../../services/api';
+import { Add, Edit, Delete, ContentCopy, Search, Image as ImageIcon } from '@mui/icons-material';
+import { productsAPI, categoriesAPI, adminAPI, modifiersAPI, imagesAPI } from '../../services/api';
 
 const ALLERGEN_OPTIONS = ['Dairy', 'Nuts', 'Gluten', 'Eggs', 'Soya', 'Vegan', 'Vegetarian'];
 
@@ -13,6 +13,7 @@ const AdminItemsCRUD: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [modifierGroups, setModifierGroups] = useState<any[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<any[]>([]);
   const [dialog, setDialog] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [error, setError] = useState('');
@@ -34,11 +35,12 @@ const AdminItemsCRUD: React.FC = () => {
     modifierGroupIds: [] as string[]
   });
 
-  useEffect(() => { fetchProducts(); fetchCategories(); fetchModifiers(); }, []);
+  useEffect(() => { fetchProducts(); fetchCategories(); fetchModifiers(); fetchImages(); }, []);
 
   const fetchProducts = async () => { try { const res = await productsAPI.getAll(); setProducts(res.data.products || []); } catch (e) {} };
   const fetchCategories = async () => { try { const res = await categoriesAPI.getAll(); setCategories(res.data || []); } catch (e) {} };
   const fetchModifiers = async () => { try { const res = await modifiersAPI.getAll(); setModifierGroups(res.data || []); } catch (e) {} };
+  const fetchImages = async () => { try { const res = await imagesAPI.getAll(); setUploadedImages(res.data.images || []); } catch (e) {} };
 
   const filteredProducts = products
     .filter(p => filterCategory === 'all' || p.category === filterCategory)
@@ -220,7 +222,19 @@ const AdminItemsCRUD: React.FC = () => {
                 </TextField>
                 <TextField label="Base Price (£)" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} sx={{ width: 150 }} />
               </Box>
-              <TextField label="Image Path" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="/images/products/Category/Name.jpg" helperText="Path to product image in public/images/products/" />
+              <TextField label="Image Path" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="/images/products/Category/Name.jpg" helperText="Path to product image" />
+              {uploadedImages.length > 0 && (
+                <Box>
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 500, mb: 1 }}>Or pick from uploaded images:</Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', maxHeight: 120, overflow: 'auto' }}>
+                    {uploadedImages.slice(0, 20).map((img: any) => (
+                      <Box key={img.filename} onClick={() => setForm({ ...form, image: img.url })} sx={{ width: 50, height: 50, borderRadius: 1, overflow: 'hidden', cursor: 'pointer', border: form.image === img.url ? '2px solid #b03160' : '2px solid transparent', '&:hover': { border: '2px solid #d4859a' } }}>
+                        <Box component="img" src={img.url} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
               <Box sx={{ display: 'flex', gap: 3 }}>
                 <FormControlLabel control={<Switch checked={form.inStock} onChange={(e) => setForm({ ...form, inStock: e.target.checked })} />} label="In Stock" />
                 <FormControlLabel control={<Switch checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />} label="Featured on Homepage" />

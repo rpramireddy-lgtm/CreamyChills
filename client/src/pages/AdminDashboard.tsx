@@ -42,6 +42,7 @@ import { adminAPI, categoriesAPI, modifiersAPI, discountsAPI, analyticsAPI, imag
 import AdminItemsCRUD from './admin/AdminItemsCRUD';
 import AdminCategoriesCRUD from './admin/AdminCategoriesCRUD';
 import AdminModifiersCRUD from './admin/AdminModifiersCRUD';
+import OrderDetail from '../components/Admin/OrderDetail';
 import axios from 'axios';
 
 const api = axios.create({ baseURL: process.env.REACT_APP_API_URL || 'https://staging.creamychills.com/api' });
@@ -67,11 +68,16 @@ const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [discountDialog, setDiscountDialog] = useState(false);
   const [discountForm, setDiscountForm] = useState({ code: '', type: 'percentage', value: 10, minOrderAmount: 0, maxUses: 100, isActive: true, description: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetchStats(); fetchOrders(); }, []);
+  useEffect(() => { fetchStats(); fetchOrders(); 
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => { fetchStats(); if (tab === 1) fetchOrders(); }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (tab === 1) fetchOrders();
@@ -185,7 +191,7 @@ const AdminDashboard: React.FC = () => {
                 <TableHead><TableRow sx={{ bgcolor: '#fcf5f6' }}><TableCell>Order</TableCell><TableCell>Customer</TableCell><TableCell>Total</TableCell><TableCell>Type</TableCell><TableCell>Status</TableCell><TableCell>Action</TableCell></TableRow></TableHead>
                 <TableBody>
                   {orders.map((o: any) => (
-                    <TableRow key={o._id}>
+                    <TableRow key={o._id} sx={{ cursor: 'pointer', '&:hover': { bgcolor: '#fcf5f6' } }} onClick={() => setSelectedOrder(o)}>
                       <TableCell sx={{ fontWeight: 500 }}>{o.orderNumber}</TableCell>
                       <TableCell>{o.user?.name || o.guestInfo?.name || '—'}</TableCell>
                       <TableCell>£{o.total?.toFixed(2)}</TableCell>
@@ -202,6 +208,13 @@ const AdminDashboard: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            <OrderDetail
+              order={selectedOrder}
+              open={!!selectedOrder}
+              onClose={() => setSelectedOrder(null)}
+              onStatusChange={(id, status) => { updateOrderStatus(id, status); setSelectedOrder(null); }}
+            />
           </Box>
         )}
 
