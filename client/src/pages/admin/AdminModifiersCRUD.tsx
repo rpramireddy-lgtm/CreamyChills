@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Button, TextField, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Switch, FormControlLabel, Chip, Divider } from '@mui/material';
-import { Add, Edit, Delete } from '@mui/icons-material';
-import { modifiersAPI } from '../../services/api';
+import { Add, Edit, Delete, ContentCopy } from '@mui/icons-material';
+import { modifiersAPI, productsAPI } from '../../services/api';
 
 const AdminModifiersCRUD: React.FC = () => {
   const [groups, setGroups] = useState<any[]>([]);
@@ -12,8 +12,28 @@ const AdminModifiersCRUD: React.FC = () => {
     modifiers: [] as Array<{ name: string; price: number }>
   });
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { fetch(); fetchUsage(); }, []);
   const fetch = async () => { try { const res = await modifiersAPI.getAll(); setGroups(res.data); } catch (e) {} };
+
+  const [usageCounts, setUsageCounts] = useState<Record<string, number>>({});
+  const fetchUsage = async () => {
+    try {
+      const res = await productsAPI.getAll();
+      const counts: Record<string, number> = {};
+      (res.data.products || []).forEach((p: any) => {
+        (p.modifierGroupIds || []).forEach((id: string) => { counts[id] = (counts[id] || 0) + 1; });
+      });
+      setUsageCounts(counts);
+    } catch (e) {}
+  };
+
+  const handleDuplicate = async (group: any) => {
+    try {
+      const { _id, createdAt, updatedAt, __v, ...rest } = group;
+      await modifiersAPI.create({ ...rest, name: `${group.name} (Copy)`, modifiers: group.modifiers.map((m: any) => ({ name: m.name, price: m.price, groupName: `${group.name} (Copy)` })) });
+      fetch();
+    } catch (e) {}
+  };
 
   const handleOpen = (group?: any) => {
     if (group) {
@@ -69,10 +89,11 @@ const AdminModifiersCRUD: React.FC = () => {
                 {g.isRequired && <Chip label="Required" size="small" color="error" sx={{ fontSize: '0.65rem', height: 20 }} />}
                 <Chip label={`Max ${g.maxSelection}`} size="small" variant="outlined" sx={{ fontSize: '0.65rem', height: 20 }} />
               </Box>
-              <Typography variant="body2" color="text.secondary">{g.description}</Typography>
+              <Typography variant="body2" color="text.secondary">{g.description} • Used by {usageCounts[g._id] || 0} items</Typography>
             </Box>
             <Box>
               <IconButton size="small" onClick={() => handleOpen(g)}><Edit sx={{ fontSize: 18 }} /></IconButton>
+              <IconButton size="small" onClick={() => handleDuplicate(g)} title="Duplicate"><ContentCopy sx={{ fontSize: 18 }} /></IconButton>
               <IconButton size="small" onClick={() => handleDelete(g._id)}><Delete sx={{ fontSize: 18 }} /></IconButton>
             </Box>
           </Box>

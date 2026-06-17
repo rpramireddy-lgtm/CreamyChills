@@ -60,7 +60,8 @@ const Products: React.FC = () => {
 
   const filteredProducts = products
     .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
-    .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
 
   const visibleProducts = filteredProducts.slice(0, visibleCount);
 

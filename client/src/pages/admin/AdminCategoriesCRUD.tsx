@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Button, TextField, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Switch, FormControlLabel, Chip } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
-import { categoriesAPI } from '../../services/api';
+import { categoriesAPI, productsAPI } from '../../services/api';
 
 const AdminCategoriesCRUD: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -11,6 +11,20 @@ const AdminCategoriesCRUD: React.FC = () => {
 
   useEffect(() => { fetch(); }, []);
   const fetch = async () => { try { const res = await categoriesAPI.getAll(); setCategories(res.data); } catch (e) {} };
+
+  // Get product counts per category
+  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const res = await productsAPI.getAll();
+        const counts: Record<string, number> = {};
+        (res.data.products || []).forEach((p: any) => { counts[p.category] = (counts[p.category] || 0) + 1; });
+        setProductCounts(counts);
+      } catch (e) {}
+    };
+    fetchCounts();
+  }, [categories]);
 
   const handleOpen = (cat?: any) => {
     if (cat) {
@@ -51,7 +65,7 @@ const AdminCategoriesCRUD: React.FC = () => {
               <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: c.color || '#b03160' }} />
               <Box>
                 <Typography sx={{ fontWeight: 500 }}>{c.name}</Typography>
-                <Typography variant="body2" color="text.secondary">{c.slug} • Order: {c.sortOrder}</Typography>
+                <Typography variant="body2" color="text.secondary">{c.slug} • Order: {c.sortOrder} • {productCounts[c.slug] || 0} items</Typography>
               </Box>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
