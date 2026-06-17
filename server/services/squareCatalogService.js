@@ -260,9 +260,8 @@ class SquareCatalogService {
       const categoryName = categoryMap[catId] || 'Other';
       const categorySlug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-      // Skip items in hidden categories
+      // Skip items in hidden categories or with £0 price
       if (!categoryName || categoryName === 'Other') {
-        // Check if the raw category was hidden
         const rawCat = categories.find(c => c.id === catId);
         if (rawCat && HIDDEN_CATEGORIES.includes(rawCat.categoryData?.name)) return null;
       }
@@ -273,6 +272,9 @@ class SquareCatalogService {
         name: v.itemVariationData?.name || 'Standard',
         price: v.itemVariationData?.priceMoney?.amount ? Number(v.itemVariationData.priceMoney.amount) / 100 : 0
       }));
+
+      // Hide items with all £0 prices
+      if (variations.every(v => v.price === 0)) return null;
 
       // Linked modifier groups - filter duplicates and mark required
       let linkedModifiers = (data?.modifierListInfo || [])
