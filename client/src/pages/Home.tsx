@@ -170,7 +170,7 @@ const Home: React.FC = () => {
           {categories.map((cat, i) => (
             <Box component={Link} to="/products" state={{ category: cat.id }} key={i} sx={{ textDecoration: 'none', textAlign: 'center', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.05)' } }}>
               <Box sx={{ width: '100%', paddingBottom: '100%', borderRadius: '50%', overflow: 'hidden', position: 'relative', mb: 1, border: '2px solid #f0e8e8', '&:hover': { border: '2px solid #b03160' } }}>
-                <CardMedia component="img" image={cat.image} alt={cat.name} sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                <CardMedia component="img" image={cat.image} alt={cat.name} loading="lazy" sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={(e: any) => { e.target.src = '/images/placeholder.jpg'; }} />
               </Box>
               <Typography sx={{ fontFamily: '"PT Serif"', color: '#333', fontSize: '0.78rem' }}>{cat.name}</Typography>
             </Box>
@@ -195,7 +195,7 @@ const Home: React.FC = () => {
                   cursor: 'pointer', borderRadius: 2, overflow: 'hidden', border: '1px solid #f0e8e8', boxShadow: 'none',
                   transition: 'all 0.2s', '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 6px 16px rgba(176,49,96,0.1)', border: '1px solid #d4859a' }
                 }}>
-                  <CardMedia component="img" height="160" image={product.image} alt={product.name} sx={{ objectFit: 'cover' }} />
+                  <CardMedia component="img" height="160" image={product.image} alt={product.name} loading="lazy" sx={{ objectFit: 'cover' }} onError={(e: any) => { e.target.src = '/images/placeholder.jpg'; }} />
                   <CardContent sx={{ p: 2 }}>
                     <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.88rem', color: '#333', mb: 0.5, lineHeight: 1.2 }}>{product.name}</Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>

@@ -95,9 +95,16 @@ const Cart: React.FC = () => {
             </Box>
 
             <Button component={Link} to="/checkout" variant="contained" fullWidth size="large"
-              sx={{ bgcolor: '#b03160', borderRadius: '100px', textTransform: 'none', fontFamily: '"PT Serif"', py: 1.5, boxShadow: 'none', '&:hover': { bgcolor: '#9e3a58' } }}>
+              disabled={state.total < 10}
+              sx={{ bgcolor: '#b03160', borderRadius: '100px', textTransform: 'none', fontFamily: '"PT Serif"', py: 1.5, boxShadow: 'none', '&:hover': { bgcolor: '#9e3a58' }, '&.Mui-disabled': { bgcolor: '#e0e0e0' } }}>
               Proceed to Checkout
             </Button>
+
+            {state.total < 10 && (
+              <Typography sx={{ textAlign: 'center', mt: 1, fontSize: '0.8rem', color: '#d32f2f' }}>
+                Minimum order £10.00 (add £{(10 - state.total).toFixed(2)} more)
+              </Typography>
+            )}
 
             <Button component={Link} to="/products" variant="text" fullWidth sx={{ mt: 1, textTransform: 'none', fontFamily: '"PT Serif"', color: '#666' }}>
               Continue Shopping

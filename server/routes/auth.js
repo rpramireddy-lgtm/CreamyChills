@@ -107,7 +107,10 @@ router.post('/login', loginValidation, async (req, res) => {
     const refreshToken = generateRefreshToken();
     user.refreshToken = refreshToken;
     await user.save();
-    
+
+    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 86400000 });
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 604800000 });
+
     res.json({
       token,
       refreshToken,

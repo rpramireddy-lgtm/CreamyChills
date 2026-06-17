@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
@@ -42,8 +43,11 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 }));
+
+// Cookie parser
+app.use(cookieParser());
 
 // Security: Rate limiting
 const generalLimiter = rateLimit({

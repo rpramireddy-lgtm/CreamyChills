@@ -167,7 +167,9 @@ const Products: React.FC = () => {
                     height="160"
                     image={product.image || '/images/placeholder.jpg'}
                     alt={product.name}
+                    loading="lazy"
                     sx={{ objectFit: 'cover' }}
+                    onError={(e: any) => { e.target.src = '/images/placeholder.jpg'; }}
                   />
                   {!product.inStock && (
                     <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
