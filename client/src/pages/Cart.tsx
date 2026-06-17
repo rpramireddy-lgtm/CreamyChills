@@ -81,17 +81,13 @@ const Cart: React.FC = () => {
               <Typography sx={{ color: '#666', fontSize: '0.9rem' }}>Subtotal</Typography>
               <Typography sx={{ fontSize: '0.9rem' }}>£{state.total.toFixed(2)}</Typography>
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography sx={{ color: '#666', fontSize: '0.9rem' }}>VAT (20%)</Typography>
-              <Typography sx={{ fontSize: '0.9rem' }}>£{(state.total * 0.2).toFixed(2)}</Typography>
-            </Box>
 
             <Divider sx={{ my: 2 }} />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
               <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 600 }}>Total</Typography>
               <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 600, color: '#b03160', fontSize: '1.2rem' }}>
-                £{(state.total * 1.2).toFixed(2)}
+                £{state.total.toFixed(2)}
               </Typography>
             </Box>
 

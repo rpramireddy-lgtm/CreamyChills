@@ -25,9 +25,9 @@ router.post('/', optionalAuth, checkOpeningHours, checkDeliveryZone, createOrder
       }
     }
     
-    const tax = Math.round(subtotal * 0.2 * 100) / 100;
+    const tax = 0;
     const deliveryFee = deliveryMethod === 'delivery' ? (req.deliveryFee || 3.99) : 0;
-    const total = Math.round((subtotal + tax + deliveryFee) * 100) / 100;
+    const total = Math.round((subtotal + deliveryFee) * 100) / 100;
     
     // Determine estimated time
     let estimatedTime;

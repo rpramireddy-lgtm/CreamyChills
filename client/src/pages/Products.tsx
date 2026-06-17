@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Box, Card, CardMedia, CardContent, Button, Chip, Tabs, Tab,
   Snackbar, Alert, Skeleton, TextField, InputAdornment, Dialog, DialogContent,
-  IconButton
+  IconButton, MenuItem, Select, FormControl, InputLabel
 } from '@mui/material';
 import { Search as SearchIcon, Close, Add, Remove } from '@mui/icons-material';
 import { useLocation } from 'react-router-dom';
@@ -164,7 +164,9 @@ const Products: React.FC = () => {
                 transition: 'all 0.2s', '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 6px 16px rgba(176,49,96,0.1)' }
               }}>
                 {product.image ? (
-                  <CardMedia component="img" height="150" image={product.image} alt={product.name} loading="lazy" sx={{ objectFit: 'cover' }} />
+                  <Box sx={{ height: 150, bgcolor: '#faf5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 1 }}>
+                    <Box component="img" src={product.image} alt={product.name} loading="lazy" sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                  </Box>
                 ) : (
                   <Box sx={{ height: 150, bgcolor: '#fcf5f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Typography sx={{ color: '#d4859a', fontSize: '2rem' }}>🍦</Typography>
@@ -204,50 +206,68 @@ const Products: React.FC = () => {
       <Dialog open={!!selectedProduct} onClose={() => setSelectedProduct(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3, maxHeight: '85vh' } }}>
         {selectedProduct && (
           <>
-            {/* Header with image */}
-            <Box sx={{ position: 'relative', height: selectedProduct.image ? 160 : 0 }}>
-              {selectedProduct.image && <Box component="img" src={selectedProduct.image} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-              <IconButton onClick={() => setSelectedProduct(null)} sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'white', width: 32, height: 32 }}><Close sx={{ fontSize: 18 }} /></IconButton>
-            </Box>
+            {/* Close button - always visible */}
+            <IconButton onClick={() => setSelectedProduct(null)} sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10, bgcolor: 'white', width: 32, height: 32, boxShadow: 1 }}>
+              <Close sx={{ fontSize: 18 }} />
+            </IconButton>
+
+            {/* Image */}
+            {selectedProduct.image && (
+              <Box component="img" src={selectedProduct.image} sx={{ width: '100%', height: 160, objectFit: 'cover' }} />
+            )}
 
             <DialogContent sx={{ p: 2.5, overflow: 'auto' }}>
-              {/* Item name + price */}
               <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '1.1rem', mb: 0.3 }}>{selectedProduct.name}</Typography>
               {selectedProduct.description && <Typography sx={{ color: '#888', fontSize: '0.78rem', mb: 2 }}>{selectedProduct.description}</Typography>}
 
-              {/* Variations as pill buttons */}
+              {/* Size dropdown */}
               {selectedProduct.variations?.length > 1 && (
-                <Box sx={{ mb: 2.5 }}>
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#333', mb: 1 }}>Size</Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.5 }}>
+                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                  <InputLabel>Size</InputLabel>
+                  <Select
+                    value={selectedVariation?.id || ''}
+                    label="Size"
+                    onChange={(e) => setSelectedVariation(selectedProduct.variations.find((v: any) => v.id === e.target.value))}
+                  >
                     {selectedProduct.variations.map((v: any) => (
-                      <Chip
-                        key={v.id}
-                        label={`${v.name} • £${v.price.toFixed(2)}`}
-                        onClick={() => setSelectedVariation(v)}
-                        sx={{
-                          borderRadius: '100px', fontSize: '0.72rem', fontWeight: 500, cursor: 'pointer',
-                          bgcolor: selectedVariation?.id === v.id ? '#b03160' : 'white',
-                          color: selectedVariation?.id === v.id ? 'white' : '#333',
-                          border: selectedVariation?.id === v.id ? '1px solid #b03160' : '1px solid #ddd',
-                          '&:hover': { bgcolor: selectedVariation?.id === v.id ? '#9e3a58' : '#fcf5f6' }
-                        }}
-                      />
+                      <MenuItem key={v.id} value={v.id}>{v.name} — £{v.price.toFixed(2)}</MenuItem>
                     ))}
-                  </Box>
-                </Box>
+                  </Select>
+                </FormControl>
               )}
 
-              {/* Modifier groups as collapsible chip selectors */}
+              {/* Modifier groups as dropdowns */}
               {selectedProduct.modifiers?.map((group: any) => {
                 const selected = selectedModifiers[group.id] || [];
+                const isSingle = group.selectionType === 'SINGLE';
+
+                if (isSingle) {
+                  return (
+                    <FormControl key={group.id} fullWidth size="small" sx={{ mb: 2 }}>
+                      <InputLabel>{group.name}</InputLabel>
+                      <Select
+                        value={selected[0] || ''}
+                        label={group.name}
+                        onChange={(e) => setSelectedModifiers({ ...selectedModifiers, [group.id]: [e.target.value as string] })}
+                      >
+                        <MenuItem value=""><em>None</em></MenuItem>
+                        {group.modifiers.map((mod: any) => (
+                          <MenuItem key={mod.id} value={mod.name}>
+                            {mod.name}{mod.price > 0 ? ` (+£${mod.price.toFixed(2)})` : ''}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  );
+                }
+
+                // Multiple selection - use chips but compact
                 return (
-                  <Box key={group.id} sx={{ mb: 2.5 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#333' }}>{group.name}</Typography>
-                      {selected.length > 0 && <Chip label={`${selected.length} selected`} size="small" sx={{ fontSize: '0.65rem', height: 20, bgcolor: '#fcf5f6', color: '#b03160' }} />}
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxHeight: 80, overflow: 'auto' }}>
+                  <Box key={group.id} sx={{ mb: 2 }}>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#333', mb: 0.5 }}>
+                      {group.name} {selected.length > 0 && <Chip label={selected.length} size="small" sx={{ ml: 0.5, fontSize: '0.65rem', height: 18, bgcolor: '#b03160', color: 'white' }} />}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxHeight: 72, overflow: 'auto' }}>
                       {group.modifiers.map((mod: any) => {
                         const isSelected = selected.includes(mod.name);
                         return (
@@ -257,7 +277,7 @@ const Products: React.FC = () => {
                             onClick={() => toggleModifier(group.id, mod.name, group.selectionType)}
                             size="small"
                             sx={{
-                              fontSize: '0.72rem', cursor: 'pointer', borderRadius: '100px',
+                              fontSize: '0.7rem', cursor: 'pointer', borderRadius: '100px',
                               bgcolor: isSelected ? '#b03160' : 'white',
                               color: isSelected ? 'white' : '#555',
                               border: isSelected ? '1px solid #b03160' : '1px solid #e0e0e0',
@@ -271,7 +291,7 @@ const Products: React.FC = () => {
                 );
               })}
 
-              {/* Quantity - compact */}
+              {/* Quantity */}
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 1 }}>
                 <IconButton onClick={() => setQuantity(Math.max(1, quantity - 1))} size="small" sx={{ border: '1px solid #ddd', width: 32, height: 32 }}><Remove sx={{ fontSize: 16 }} /></IconButton>
                 <Typography sx={{ fontWeight: 600 }}>{quantity}</Typography>
@@ -279,7 +299,7 @@ const Products: React.FC = () => {
               </Box>
             </DialogContent>
 
-            {/* Sticky footer with total */}
+            {/* Sticky footer */}
             <Box sx={{ p: 2, borderTop: '1px solid #f0e8e8' }}>
               <Button fullWidth variant="contained" onClick={handleAddToCart}
                 sx={{ bgcolor: '#b03160', '&:hover': { bgcolor: '#9e3a58' }, borderRadius: '100px', py: 1.3, textTransform: 'none', fontFamily: '"Poppins"', fontSize: '0.95rem', fontWeight: 500, boxShadow: 'none' }}>

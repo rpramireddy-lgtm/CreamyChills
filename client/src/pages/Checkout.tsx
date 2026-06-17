@@ -47,8 +47,7 @@ const Checkout: React.FC = () => {
   const subtotal = cartState.total;
   const deliveryFee = formData.deliveryMethod === 'delivery' ? 3.99 : 0;
   const discount = discountResult?.discountAmount || 0;
-  const tax = Math.round((subtotal - discount) * 0.2 * 100) / 100;
-  const total = Math.round((subtotal - discount + deliveryFee + tax + tip) * 100) / 100;
+  const total = Math.round((subtotal - discount + deliveryFee + tip) * 100) / 100;
 
   const handleApplyDiscount = async () => {
     setDiscountError('');
@@ -306,12 +305,6 @@ const Checkout: React.FC = () => {
               <Typography>Subtotal:</Typography>
               <Typography>£{subtotal.toFixed(2)}</Typography>
             </Box>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography>VAT (20%):</Typography>
-              <Typography>£{tax.toFixed(2)}</Typography>
-            </Box>
-
             {discount > 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography sx={{ color: '#4caf50' }}>Discount:</Typography>
