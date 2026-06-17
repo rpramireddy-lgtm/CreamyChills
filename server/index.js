@@ -190,7 +190,7 @@ initSocket(server);
 const gracefulShutdown = (signal) => {
   console.log(`\n${signal} received. Shutting down gracefully...`);
   server.close(() => {
-    mongoose.connection.close(false, () => {
+    mongoose.connection.close().then(() => {
       console.log('Server closed.');
       process.exit(0);
     });

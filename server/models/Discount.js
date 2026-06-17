@@ -31,7 +31,4 @@ const discountSchema = new mongoose.Schema({
   timestamps: true
 });
 
-discountSchema.index({ code: 1 });
-discountSchema.index({ isActive: 1, startDate: 1, endDate: 1 });
-
 module.exports = mongoose.model('Discount', discountSchema);

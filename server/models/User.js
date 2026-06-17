@@ -60,31 +60,25 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Hash password before save
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
   this.passwordChangedAt = new Date();
   next();
 });
 
-// Compare password
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Check if password was changed after token was issued
 userSchema.methods.changedPasswordAfter = function(jwtTimestamp) {
   if (this.passwordChangedAt) {
-    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
-    return jwtTimestamp < changedTimestamp;
+    return jwtTimestamp < parseInt(this.passwordChangedAt.getTime() / 1000, 10);
   }
   return false;
 };
 
-// Remove sensitive fields from JSON output
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
@@ -94,8 +88,5 @@ userSchema.methods.toJSON = function() {
   delete obj.verificationToken;
   return obj;
 };
-
-userSchema.index({ email: 1 });
-userSchema.index({ squareCustomerId: 1 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -30,6 +30,7 @@ const Products: React.FC = () => {
   const [addedItemName, setAddedItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [modifierProduct, setModifierProduct] = useState<any>(null);
+  const [visibleCount, setVisibleCount] = useState(20);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -60,6 +61,8 @@ const Products: React.FC = () => {
   const filteredProducts = products
     .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
     .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
 
   const handleAddToCart = (product: Product, size?: { name: string; price: number }) => {
     const price = size ? size.price : product.price;
@@ -148,7 +151,7 @@ const Products: React.FC = () => {
         {/* Products Grid */}
         {!loading && (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', md: 'repeat(4,1fr)' }, gap: 2 }}>
-            {filteredProducts.map((product) => (
+              {visibleProducts.map((product) => (
               <Card
                 key={product._id}
                 sx={{
@@ -248,6 +251,14 @@ const Products: React.FC = () => {
         {!loading && filteredProducts.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Typography sx={{ color: '#999', fontFamily: '"PT Serif"' }}>No items in this category yet</Typography>
+          </Box>
+        )}
+
+        {!loading && visibleCount < filteredProducts.length && (
+          <Box sx={{ textAlign: 'center', mt: 4 }}>
+            <Button onClick={() => setVisibleCount(prev => prev + 20)} variant="outlined" sx={{ borderColor: '#b03160', color: '#b03160', borderRadius: '100px', textTransform: 'none', px: 4 }}>
+              Load More ({filteredProducts.length - visibleCount} remaining)
+            </Button>
           </Box>
         )}
       </Container>

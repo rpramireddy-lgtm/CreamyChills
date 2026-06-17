@@ -4,6 +4,7 @@ import { Add, Remove, Delete, ShoppingBag } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import SEO from '../components/SEO';
+import UpsellSuggestions from '../components/UpsellSuggestions';
 
 const Cart: React.FC = () => {
   const { state, updateQuantity, removeFromCart, getItemTotal } = useCart();
@@ -109,6 +110,8 @@ const Cart: React.FC = () => {
             <Button component={Link} to="/products" variant="text" fullWidth sx={{ mt: 1, textTransform: 'none', fontFamily: '"PT Serif"', color: '#666' }}>
               Continue Shopping
             </Button>
+
+            <UpsellSuggestions />
           </Paper>
         </Box>
       </Container>
