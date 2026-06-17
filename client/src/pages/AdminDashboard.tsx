@@ -69,6 +69,7 @@ const AdminDashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [analyticsPeriod, setAnalyticsPeriod] = useState('30d');
   const [discountDialog, setDiscountDialog] = useState(false);
   const [discountForm, setDiscountForm] = useState({ code: '', type: 'percentage', value: 10, minOrderAmount: 0, maxUses: 100, isActive: true, description: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,7 +89,7 @@ const AdminDashboard: React.FC = () => {
     if (tab === 7) fetchImages();
     if (tab === 8) fetchReviews();
     if (tab === 9) fetchUsers();
-  }, [tab]);
+  }, [tab, analyticsPeriod]);
 
   const fetchStats = async () => { try { const res = await adminAPI.getStats(); setStats(res.data); } catch (e) {} finally { setLoading(false); } };
   const fetchOrders = async () => { try { const p: any = {}; if (statusFilter) p.status = statusFilter; const res = await adminAPI.getOrders(p); setOrders(res.data.orders || []); } catch (e) {} };
@@ -101,7 +102,7 @@ const AdminDashboard: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       const [rev, top, peak, cust] = await Promise.all([
-        analyticsAPI.getRevenue('30d'), analyticsAPI.getTopProducts(10), analyticsAPI.getPeakHours(), analyticsAPI.getCustomers()
+        analyticsAPI.getRevenue(analyticsPeriod), analyticsAPI.getTopProducts(10), analyticsAPI.getPeakHours(), analyticsAPI.getCustomers()
       ]);
       setAnalytics(rev.data); setTopProducts(top.data); setPeakHours(peak.data); setCustomerStats(cust.data);
     } catch (e) {}
@@ -273,7 +274,18 @@ const AdminDashboard: React.FC = () => {
         {/* 6: Analytics */}
         {tab === 6 && (
           <Box>
-            <Typography variant="h5" sx={{ fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160', mb: 3 }}>Analytics (30 days)</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="h5" sx={{ fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160' }}>Analytics</Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {['7d', '30d', '90d'].map(p => (
+                  <Button key={p} size="small" variant={analyticsPeriod === p ? 'contained' : 'outlined'}
+                    onClick={() => { setAnalyticsPeriod(p); }}
+                    sx={{ textTransform: 'none', fontSize: '0.75rem', ...(analyticsPeriod === p ? { bgcolor: '#b03160' } : { borderColor: '#b03160', color: '#b03160' }) }}>
+                    {p === '7d' ? '7 Days' : p === '30d' ? '30 Days' : '90 Days'}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
             {analytics && (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: 2, mb: 3 }}>
                 <Card><CardContent><Typography color="text.secondary" sx={{ fontSize: '0.75rem' }}>Revenue</Typography><Typography variant="h5" sx={{ fontWeight: 600, color: '#b03160' }}>£{analytics.totalRevenue?.toFixed(2)}</Typography></CardContent></Card>

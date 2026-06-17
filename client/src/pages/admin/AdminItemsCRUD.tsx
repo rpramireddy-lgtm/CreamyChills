@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { Add, Edit, Delete, ContentCopy, Search, Image as ImageIcon } from '@mui/icons-material';
 import { productsAPI, categoriesAPI, adminAPI, modifiersAPI, imagesAPI } from '../../services/api';
+import BulkActions from '../../components/Admin/BulkActions';
 
 const ALLERGEN_OPTIONS = ['Dairy', 'Nuts', 'Gluten', 'Eggs', 'Soya', 'Vegan', 'Vegetarian'];
 
@@ -157,6 +158,9 @@ const AdminItemsCRUD: React.FC = () => {
           {categories.map((c: any) => <MenuItem key={c._id} value={c.slug}>{c.name}</MenuItem>)}
         </TextField>
       </Box>
+
+      {/* Bulk Actions */}
+      <BulkActions products={filteredProducts} categories={categories} onComplete={fetchProducts} />
 
       {/* Table */}
       <TableContainer component={Paper}>
