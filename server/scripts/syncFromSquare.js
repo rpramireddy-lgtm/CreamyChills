@@ -1,82 +1,46 @@
 const mongoose = require('mongoose');
-const { SquareClient, SquareEnvironment } = require('square');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const ModifierGroup = require('../models/ModifierGroup');
+const squareCatalogSync = require('../services/squareCatalogSync');
 require('dotenv').config();
 
 async function syncFromSquare() {
   await mongoose.connect(process.env.MONGODB_URI);
-
-  const client = new SquareClient({
-    token: process.env.SQUARE_ACCESS_TOKEN,
-    environment: SquareEnvironment.Production
-  });
-
   console.log('🔄 Syncing from Square POS...\n');
 
-  // 1. Fetch all catalog objects
-  let allObjects = [];
-  let cursor = null;
-  do {
-    const search = await client.catalog.search({
-      objectTypes: ['ITEM', 'CATEGORY', 'MODIFIER_LIST'],
-      limit: 200,
-      cursor: cursor || undefined
-    });
-    if (search.objects) allObjects = allObjects.concat(search.objects);
-    cursor = search.cursor;
-  } while (cursor);
+  const { items, categories, modifierLists, imageMap } = await squareCatalogSync.pullAll();
+  console.log(`Found: ${items.length} items, ${categories.length} categories, ${modifierLists.length} modifiers, ${Object.keys(imageMap).length} images\n`);
 
-  const squareItems = allObjects.filter(o => o.type === 'ITEM');
-  const squareCategories = allObjects.filter(o => o.type === 'CATEGORY');
-  const squareModifiers = allObjects.filter(o => o.type === 'MODIFIER_LIST');
-
-  console.log(`Found: ${squareItems.length} items, ${squareCategories.length} categories, ${squareModifiers.length} modifier lists\n`);
-
-  // 2. Sync Categories
-  // Filter to main dessert categories only (skip duplicates and internal ones)
-  const mainCategories = squareCategories.filter(c => {
-    const name = c.categoryData?.name || '';
-    // Skip internal/inventory categories
-    if (['Ingredients Stock Management', 'Inventory', 'Online Menu'].includes(name)) return false;
-    return true;
-  });
-
-  // Deduplicate by name (keep first occurrence)
+  // 1. Sync Categories (deduplicate by name)
   const seenCatNames = new Set();
-  const uniqueCategories = mainCategories.filter(c => {
+  const uniqueCategories = categories.filter(c => {
     const name = c.categoryData?.name;
-    if (seenCatNames.has(name)) return false;
+    if (!name || seenCatNames.has(name)) return false;
+    if (['Ingredients Stock Management', 'Inventory'].includes(name)) return false;
     seenCatNames.add(name);
     return true;
   });
 
   await Category.deleteMany({});
-  const categoryMap = {}; // squareId -> slug
+  const categoryMap = {};
 
   for (let i = 0; i < uniqueCategories.length; i++) {
     const c = uniqueCategories[i];
-    const name = c.categoryData?.name || 'Unknown';
+    const name = c.categoryData.name;
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-    const cat = new Category({
-      name,
-      slug,
-      sortOrder: i,
-      isActive: true,
-      color: '#b03160'
-    });
-    await cat.save();
+    await Category.create({ name, slug, sortOrder: i, isActive: true, color: '#b03160' });
     categoryMap[c.id] = slug;
+    // Map duplicate IDs too
+    categories.filter(x => x.categoryData?.name === name).forEach(x => { categoryMap[x.id] = slug; });
   }
   console.log(`✅ ${uniqueCategories.length} categories synced`);
 
-  // 3. Sync Modifier Lists
+  // 2. Sync Modifiers
   await ModifierGroup.deleteMany({});
-  const modGroupMap = {}; // squareId -> mongoId
+  const modGroupMap = {};
 
-  for (const m of squareModifiers) {
+  for (const m of modifierLists) {
     const data = m.modifierListData;
     const modifiers = (data?.modifiers || []).map((mod, i) => ({
       name: mod.modifierData?.name || `Option ${i + 1}`,
@@ -86,34 +50,30 @@ async function syncFromSquare() {
       isActive: true
     }));
 
-    const group = new ModifierGroup({
+    const group = await ModifierGroup.create({
       name: data?.name || 'Unknown',
       description: '',
       isRequired: false,
       minSelection: 0,
-      maxSelection: modifiers.length,
+      maxSelection: Math.max(modifiers.length, 1),
       modifiers,
-      isActive: true,
-      sortOrder: 0
+      isActive: true
     });
-    await group.save();
     modGroupMap[m.id] = group._id;
   }
-  console.log(`✅ ${squareModifiers.length} modifier groups synced`);
+  console.log(`✅ ${modifierLists.length} modifier groups synced`);
 
-  // 4. Sync Items
+  // 3. Sync Products with images
   await Product.deleteMany({});
-  let itemCount = 0;
+  let count = 0;
 
-  for (const item of squareItems) {
+  for (const item of items) {
     const data = item.itemData;
     if (!data?.name) continue;
 
-    // Find category
     const catId = data.categories?.[0]?.id || data.reportingCategory?.id;
     const category = categoryMap[catId] || 'extras';
 
-    // Get variations (sizes/prices)
     const variations = data.variations || [];
     const sizes = variations.length > 1
       ? variations.map(v => ({
@@ -123,42 +83,35 @@ async function syncFromSquare() {
       : [];
 
     const basePrice = variations[0]?.itemVariationData?.priceMoney?.amount
-      ? Number(variations[0].itemVariationData.priceMoney.amount) / 100
-      : 0;
+      ? Number(variations[0].itemVariationData.priceMoney.amount) / 100 : 0;
 
-    // Get linked modifier lists
     const modifierGroupIds = (data.modifierListInfo || [])
       .map(ml => modGroupMap[ml.modifierListId])
       .filter(Boolean);
 
-    const product = new Product({
+    // Get image URL from Square
+    const image = squareCatalogSync.getImageUrl(item, imageMap);
+
+    await Product.create({
       name: data.name,
       description: data.description || '',
       category,
       price: basePrice,
-      image: data.imageIds?.[0] ? '' : '', // Square images need separate fetch
+      image,
       inStock: true,
       featured: false,
       sizes,
       modifierGroupIds,
       allergens: [],
-      preparationTime: 10
+      preparationTime: 10,
+      squareCatalogId: item.id // Store Square ID for two-way sync
     });
-
-    await product.save();
-    itemCount++;
+    count++;
   }
-  console.log(`✅ ${itemCount} products synced`);
+  console.log(`✅ ${count} products synced (with ${Object.keys(imageMap).length} images)`);
 
   console.log('\n🎉 Square sync complete!');
-  console.log(`   Categories: ${uniqueCategories.length}`);
-  console.log(`   Modifiers: ${squareModifiers.length}`);
-  console.log(`   Products: ${itemCount}`);
-
   process.exit(0);
 }
 
-syncFromSquare().catch(e => {
-  console.error('Sync failed:', e);
-  process.exit(1);
-});
+syncFromSquare().catch(e => { console.error('Sync failed:', e.message); process.exit(1); });
