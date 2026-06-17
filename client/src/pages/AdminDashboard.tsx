@@ -40,6 +40,8 @@ import {
 } from '@mui/icons-material';
 import { adminAPI, categoriesAPI, modifiersAPI, discountsAPI, analyticsAPI, imagesAPI } from '../services/api';
 import AdminItemsCRUD from './admin/AdminItemsCRUD';
+import AdminCategoriesCRUD from './admin/AdminCategoriesCRUD';
+import AdminModifiersCRUD from './admin/AdminModifiersCRUD';
 import axios from 'axios';
 
 const api = axios.create({ baseURL: process.env.REACT_APP_API_URL || 'https://staging.creamychills.com/api' });
@@ -207,38 +209,10 @@ const AdminDashboard: React.FC = () => {
         {tab === 2 && <AdminItemsCRUD />}
 
         {/* 3: Categories */}
-        {tab === 3 && (
-          <Box>
-            <Typography variant="h5" sx={{ fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160', mb: 3 }}>Categories ({categories.length})</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)' }, gap: 2 }}>
-              {categories.map((c: any) => (
-                <Card key={c._id}><CardContent sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Box><Typography sx={{ fontWeight: 500 }}>{c.name}</Typography><Typography variant="body2" color="text.secondary">{c.slug}</Typography></Box>
-                  <Chip label={c.isActive ? 'Active' : 'Off'} size="small" color={c.isActive ? 'success' : 'default'} />
-                </CardContent></Card>
-              ))}
-            </Box>
-          </Box>
-        )}
+        {tab === 3 && <AdminCategoriesCRUD />}
 
         {/* 4: Modifiers */}
-        {tab === 4 && (
-          <Box>
-            <Typography variant="h5" sx={{ fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160', mb: 3 }}>Modifiers ({modifiers.length})</Typography>
-            {modifiers.map((g: any) => (
-              <Paper key={g._id} sx={{ p: 2, mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography sx={{ fontWeight: 500 }}>{g.name}</Typography>
-                  <Chip label={g.isRequired ? 'Required' : 'Optional'} size="small" color={g.isRequired ? 'error' : 'default'} />
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{g.description} • Max {g.maxSelection}</Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {g.modifiers?.map((m: any, i: number) => <Chip key={i} label={`${m.name}${m.price > 0 ? ` +£${m.price.toFixed(2)}` : ''}`} size="small" variant="outlined" />)}
-                </Box>
-              </Paper>
-            ))}
-          </Box>
-        )}
+        {tab === 4 && <AdminModifiersCRUD />}
 
         {/* 5: Discounts */}
         {tab === 5 && (
