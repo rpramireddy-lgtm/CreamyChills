@@ -1,21 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Card,
-  CardMedia,
-  CardContent,
-  Button,
-  Chip,
-  Snackbar,
-  Alert,
-} from '@mui/material';
-import { Add, ArrowForward } from '@mui/icons-material';
+import { Container, Typography, Box, Card, CardMedia, CardContent, Button, Chip, Snackbar, Alert } from '@mui/material';
+import { ArrowForward, AccessTime, LocationOn, Star } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
 import { productsAPI } from '../services/api';
 import ModifierModal from '../components/ModifierModal';
+import SEO from '../components/SEO';
 
 interface Product {
   _id: string;
@@ -28,360 +17,190 @@ interface Product {
   inStock: boolean;
 }
 
+const isOpen = () => {
+  const now = new Date();
+  const hour = now.getHours();
+  const day = now.getDay();
+  const closeHour = [5, 6].includes(day) ? 23 : 22;
+  return hour >= 12 && hour < closeHour;
+};
+
 const Home: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [addedItemName, setAddedItemName] = useState('');
-  const { addToCart } = useCart();
 
-  useEffect(() => {
-    fetchFeaturedProducts();
-  }, []);
+  useEffect(() => { fetchFeaturedProducts(); }, []);
 
   const fetchFeaturedProducts = async () => {
     try {
       const response = await productsAPI.getAll({ featured: true, limit: 8 });
       setFeaturedProducts(response.data.products || []);
-    } catch (error) {
-      console.error('Error fetching featured products:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error(error); }
+    finally { setLoading(false); }
   };
 
   const categories = [
-    { name: 'Ice Cream', id: 'ice-cream', image: '/images/products/IceCreams/Vanilla Ice Cream.jpg' },
+    { name: 'Ice Cream', id: 'ice-cream', image: '/images/products/IceCreams/Ferrero Rocher.jpg' },
     { name: 'Waffles', id: 'waffle', image: '/images/products/Waffles/Kinder Bueno Waffle.jpg' },
     { name: 'Milkshakes', id: 'milkshake', image: '/images/products/Milkshakes/Dubai Milkshake.jpg' },
-    { name: 'Cakes', id: 'cake', image: '/images/products/Cakes/Dream Cake.jpg' },
-    { name: 'Sundaes', id: 'sundae', image: '/images/products/Sundaes/Oreo Sundae.jpg' },
+    { name: 'Crepes', id: 'crepe', image: '/images/products/Crepes/Nutella Crepe.jpg' },
     { name: 'Cookie Dough', id: 'cookie-dough', image: '/images/products/Cookie Dough/Nutella Cookie Dough.jpg' },
+    { name: 'Sundaes', id: 'sundae', image: '/images/products/Sundaes/Kinder Bueno Sundae.jpg' },
+    { name: 'Loaded Kunafa', id: 'loaded-kunafa', image: '/images/products/Loaded Kunafa/Dubai Kunafas.jpg' },
+    { name: 'Cakes', id: 'cake', image: '/images/products/Cakes/Matilda Cake.jpg' },
   ];
+
+  const open = isOpen();
 
   return (
     <Box sx={{ bgcolor: '#fff8f4', minHeight: '100vh' }}>
-      {/* Hero Section */}
-      <Box
-        sx={{
-          position: 'relative',
-          bgcolor: '#b03160',
-          color: 'white',
-          py: { xs: 10, md: 14 },
-          textAlign: 'center',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(ellipse at top right, rgba(212, 133, 154, 0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom left, rgba(198, 100, 129, 0.3) 0%, transparent 60%)',
-          }
-        }}
-      >
-        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
-          <Typography
-            variant="h1"
-            component="h1"
-            sx={{
-              fontFamily: '"Poppins", sans-serif',
-              fontWeight: 600,
-              fontSize: { xs: '2.8rem', md: '4rem' },
-              mb: 3,
-              letterSpacing: '-0.02em',
-              color: '#ffffff',
-            }}
-          >
-            Creamy Chills
-          </Typography>
-          <Typography
-            variant="h5"
-            sx={{
-              fontFamily: '"PT Serif", serif',
-              fontWeight: 400,
-              mb: 5,
-              color: 'rgba(255,255,255,0.9)',
-              fontSize: { xs: '1.1rem', md: '1.4rem' },
-              lineHeight: 1.6,
-              maxWidth: '600px',
-              mx: 'auto',
-            }}
-          >
-            Premium handcrafted desserts in Broxburn.<br/>
-            Made fresh daily with the finest ingredients.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Button
-              component={Link}
-              to="/products"
-              variant="contained"
-              size="large"
-              sx={{
-                bgcolor: '#ffffff',
-                color: '#b03160',
-                borderRadius: '100px',
-                px: 5,
-                py: 1.5,
-                fontSize: '1rem',
-                fontFamily: '"PT Serif", serif',
-                fontWeight: 400,
-                textTransform: 'none',
-                boxShadow: 'none',
-                '&:hover': { bgcolor: '#f0d6e0', boxShadow: 'none' },
-              }}
-            >
-              Order Now
-            </Button>
-            <Button
-              component={Link}
-              to="/products"
-              variant="outlined"
-              size="large"
-              sx={{
-                borderColor: 'rgba(255,255,255,0.6)',
-                color: '#ffffff',
-                borderRadius: '100px',
-                px: 5,
-                py: 1.5,
-                fontSize: '1rem',
-                fontFamily: '"PT Serif", serif',
-                fontWeight: 400,
-                textTransform: 'none',
-                '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' },
-              }}
-            >
-              View Menu
-            </Button>
+      <SEO title="" description="Premium handcrafted desserts in Broxburn. Order ice cream, waffles, milkshakes, crepes and more for collection or delivery." />
+
+      {/* HERO SECTION */}
+      <Box sx={{ position: 'relative', overflow: 'hidden', bgcolor: '#b03160' }}>
+        {/* Background image overlay */}
+        <Box sx={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundImage: 'url(/images/products/Waffles/Dubai Kunafa Waffle.jpg)',
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          opacity: 0.15,
+        }} />
+        
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{
+            display: 'flex', flexDirection: { xs: 'column', md: 'row' },
+            alignItems: 'center', gap: { xs: 4, md: 6 },
+            py: { xs: 8, md: 10 },
+          }}>
+            {/* Left: Text */}
+            <Box sx={{ flex: 1, color: 'white', textAlign: { xs: 'center', md: 'left' } }}>
+              {/* Open/Closed badge */}
+              <Chip
+                icon={<AccessTime sx={{ color: 'white !important', fontSize: 16 }} />}
+                label={open ? 'Open Now' : 'Currently Closed'}
+                sx={{
+                  bgcolor: open ? 'rgba(76, 175, 80, 0.9)' : 'rgba(255, 255, 255, 0.2)',
+                  color: 'white', mb: 3, fontFamily: '"PT Serif"'
+                }}
+              />
+
+              <Typography sx={{
+                fontFamily: '"Poppins"', fontWeight: 600,
+                fontSize: { xs: '2.5rem', md: '3.5rem' },
+                lineHeight: 1.1, mb: 2, color: 'white',
+              }}>
+                Desserts worth<br />melting for
+              </Typography>
+
+              <Typography sx={{
+                fontFamily: '"PT Serif"', fontSize: { xs: '1rem', md: '1.2rem' },
+                color: 'rgba(255,255,255,0.85)', mb: 4, maxWidth: 450,
+                mx: { xs: 'auto', md: 0 }, lineHeight: 1.6,
+              }}>
+                Handcrafted waffles, crepes, milkshakes and ice cream made fresh in Broxburn. Order for collection or delivery.
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: { xs: 'center', md: 'flex-start' }, flexWrap: 'wrap' }}>
+                <Button
+                  component={Link} to="/products" variant="contained" size="large"
+                  sx={{ bgcolor: 'white', color: '#b03160', borderRadius: '100px', px: 4, py: 1.5, fontFamily: '"PT Serif"', textTransform: 'none', boxShadow: 'none', '&:hover': { bgcolor: '#f0d6e0' } }}
+                >
+                  Order Now
+                </Button>
+                <Button
+                  component={Link} to="/find-us" variant="outlined" size="large"
+                  sx={{ borderColor: 'rgba(255,255,255,0.5)', color: 'white', borderRadius: '100px', px: 4, py: 1.5, fontFamily: '"PT Serif"', textTransform: 'none', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}
+                >
+                  Find Us
+                </Button>
+              </Box>
+
+              {/* Trust signals */}
+              <Box sx={{ display: 'flex', gap: 3, mt: 4, justifyContent: { xs: 'center', md: 'flex-start' }, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Star sx={{ fontSize: 18, color: '#FFD700' }} />
+                  <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>4.8 rated</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <LocationOn sx={{ fontSize: 18, color: 'rgba(255,255,255,0.8)' }} />
+                  <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>Broxburn, EH52</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <AccessTime sx={{ fontSize: 18, color: 'rgba(255,255,255,0.8)' }} />
+                  <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>~15 min prep</Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Right: Product images collage */}
+            <Box sx={{ flex: 1, display: { xs: 'none', md: 'grid' }, gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, maxWidth: 400 }}>
+              {[
+                '/images/products/Waffles/Kinder Bueno Waffle.jpg',
+                '/images/products/Milkshakes/Dubai Milkshake.jpg',
+                '/images/products/Crepes/Nutella Crepe.jpg',
+                '/images/products/Sundaes/Kinder Bueno Sundae.jpg'
+              ].map((img, i) => (
+                <Box key={i} sx={{
+                  borderRadius: 2, overflow: 'hidden',
+                  height: i === 0 || i === 3 ? 180 : 150,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                  transform: i % 2 === 0 ? 'translateY(-10px)' : 'translateY(10px)',
+                }}>
+                  <Box component="img" src={img} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </Box>
+              ))}
+            </Box>
           </Box>
         </Container>
       </Box>
 
-      {/* Pickup info bar */}
-      <Box sx={{ bgcolor: '#9e3a58', py: 1.5, textAlign: 'center' }}>
-        <Typography sx={{ 
-          color: 'white', 
-          fontFamily: '"PT Serif", serif',
-          fontSize: '0.95rem' 
-        }}>
-          📍 Pickup from 60 East Main Street, Broxburn
-        </Typography>
-      </Box>
-
-      {/* Categories Section */}
-      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
-        <Typography
-          variant="h3"
-          sx={{
-            textAlign: 'center',
-            fontFamily: '"Poppins", sans-serif',
-            fontWeight: 500,
-            color: '#b03160',
-            mb: 2,
-            fontSize: { xs: '1.8rem', md: '2.2rem' },
-          }}
-        >
+      {/* Categories */}
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
+        <Typography sx={{ textAlign: 'center', fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160', mb: 1, fontSize: { xs: '1.6rem', md: '2rem' } }}>
           Our Menu
         </Typography>
-        <Typography
-          sx={{
-            textAlign: 'center',
-            fontFamily: '"PT Serif", serif',
-            color: '#696969',
-            mb: 6,
-            fontSize: '1.05rem',
-          }}
-        >
-          Explore our handcrafted dessert collection
+        <Typography sx={{ textAlign: 'center', fontFamily: '"PT Serif"', color: '#696969', mb: 5 }}>
+          Tap a category to explore
         </Typography>
-        
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' },
-          gap: 3 
-        }}>
-          {categories.map((category, index) => (
-            <Box
-              component={Link}
-              to="/products"
-              state={{ category: category.id }}
-              key={index}
-              sx={{
-                textDecoration: 'none',
-                textAlign: 'center',
-                transition: 'transform 0.3s ease',
-                '&:hover': { transform: 'translateY(-4px)' },
-              }}
-            >
-              <Box
-                sx={{
-                  width: '100%',
-                  paddingBottom: '100%',
-                  borderRadius: '50%',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  mb: 1.5,
-                  boxShadow: '0 4px 12px rgba(176, 49, 96, 0.12)',
-                  border: '3px solid transparent',
-                  '&:hover': { border: '3px solid #d4859a' },
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  image={category.image}
-                  alt={category.name}
-                  sx={{ 
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover' 
-                  }}
-                />
+
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)', md: 'repeat(8, 1fr)' }, gap: 2 }}>
+          {categories.map((cat, i) => (
+            <Box component={Link} to="/products" state={{ category: cat.id }} key={i} sx={{ textDecoration: 'none', textAlign: 'center', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.05)' } }}>
+              <Box sx={{ width: '100%', paddingBottom: '100%', borderRadius: '50%', overflow: 'hidden', position: 'relative', mb: 1, border: '2px solid #f0e8e8', '&:hover': { border: '2px solid #b03160' } }}>
+                <CardMedia component="img" image={cat.image} alt={cat.name} sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
               </Box>
-              <Typography
-                sx={{
-                  fontFamily: '"PT Serif", serif',
-                  fontWeight: 400,
-                  color: '#333',
-                  fontSize: '0.9rem',
-                }}
-              >
-                {category.name}
-              </Typography>
+              <Typography sx={{ fontFamily: '"PT Serif"', color: '#333', fontSize: '0.78rem' }}>{cat.name}</Typography>
             </Box>
           ))}
         </Box>
       </Container>
 
       {/* Featured Products */}
-      <Box sx={{ bgcolor: 'white', py: { xs: 6, md: 10 } }}>
+      <Box sx={{ bgcolor: 'white', py: { xs: 6, md: 8 } }}>
         <Container maxWidth="lg">
-          <Typography
-            variant="h3"
-            sx={{
-              textAlign: 'center',
-              fontFamily: '"Poppins", sans-serif',
-              fontWeight: 500,
-              color: '#b03160',
-              mb: 2,
-              fontSize: { xs: '1.8rem', md: '2.2rem' },
-            }}
-          >
-            Popular Right Now
+          <Typography sx={{ textAlign: 'center', fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160', mb: 1, fontSize: { xs: '1.6rem', md: '2rem' } }}>
+            Most Popular
           </Typography>
-          <Typography
-            sx={{
-              textAlign: 'center',
-              fontFamily: '"PT Serif", serif',
-              color: '#696969',
-              mb: 6,
-              fontSize: '1.05rem',
-            }}
-          >
-            Our customers' favourites
+          <Typography sx={{ textAlign: 'center', fontFamily: '"PT Serif"', color: '#696969', mb: 5 }}>
+            Customer favourites this week
           </Typography>
 
-          {loading ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography>Loading...</Typography>
-            </Box>
-          ) : (
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
-              gap: 3 
-            }}>
+          {!loading && (
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2.5 }}>
               {featuredProducts.map((product) => (
-                <Card
-                  key={product._id}
-                  sx={{
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease',
-                    border: '1px solid #f0e8e8',
-                    boxShadow: 'none',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 24px rgba(176, 49, 96, 0.1)',
-                    },
-                  }}
-                >
-                  <Box sx={{ position: 'relative' }}>
-                    <CardMedia
-                      component="img"
-                      height="180"
-                      image={product.image}
-                      alt={product.name}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                  </Box>
-
-                  <CardContent sx={{ p: 2.5 }}>
-                    <Typography
-                      sx={{
-                        fontFamily: '"Poppins", sans-serif',
-                        fontWeight: 500,
-                        color: '#333',
-                        fontSize: '0.95rem',
-                        mb: 0.5,
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {product.name}
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        fontFamily: '"PT Serif", serif',
-                        color: '#999',
-                        fontSize: '0.8rem',
-                        mb: 2,
-                        lineHeight: 1.4,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {product.description}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography
-                        sx={{
-                          fontFamily: '"Poppins", sans-serif',
-                          fontWeight: 600,
-                          color: '#b03160',
-                          fontSize: '1.1rem',
-                        }}
-                      >
-                        £{product.price.toFixed(2)}
-                      </Typography>
-
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={() => setSelectedProduct(product)}
-                        disabled={!product.inStock}
-                        sx={{
-                          bgcolor: '#b03160',
-                          color: 'white',
-                          borderRadius: '100px',
-                          textTransform: 'none',
-                          fontFamily: '"PT Serif", serif',
-                          fontSize: '0.8rem',
-                          px: 2,
-                          py: 0.5,
-                          boxShadow: 'none',
-                          '&:hover': { bgcolor: '#9e3a58', boxShadow: 'none' },
-                        }}
-                      >
-                        Add
-                      </Button>
+                <Card key={product._id} onClick={() => setSelectedProduct(product)} sx={{
+                  cursor: 'pointer', borderRadius: 2, overflow: 'hidden', border: '1px solid #f0e8e8', boxShadow: 'none',
+                  transition: 'all 0.2s', '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 6px 16px rgba(176,49,96,0.1)', border: '1px solid #d4859a' }
+                }}>
+                  <CardMedia component="img" height="160" image={product.image} alt={product.name} sx={{ objectFit: 'cover' }} />
+                  <CardContent sx={{ p: 2 }}>
+                    <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.88rem', color: '#333', mb: 0.5, lineHeight: 1.2 }}>{product.name}</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                      <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 600, color: '#b03160', fontSize: '1rem' }}>£{product.price.toFixed(2)}</Typography>
+                      <Chip label="Add" size="small" sx={{ bgcolor: '#b03160', color: 'white', fontSize: '0.7rem', height: 24, cursor: 'pointer' }} />
                     </Box>
                   </CardContent>
                 </Card>
@@ -389,86 +208,34 @@ const Home: React.FC = () => {
             </Box>
           )}
 
-          <Box sx={{ textAlign: 'center', mt: 6 }}>
-            <Button
-              component={Link}
-              to="/products"
-              variant="outlined"
-              size="large"
-              endIcon={<ArrowForward />}
-              sx={{
-                borderColor: '#b03160',
-                color: '#b03160',
-                borderRadius: '100px',
-                px: 5,
-                py: 1.5,
-                fontSize: '1rem',
-                fontFamily: '"PT Serif", serif',
-                fontWeight: 400,
-                textTransform: 'none',
-                '&:hover': {
-                  borderColor: '#9e3a58',
-                  bgcolor: '#b03160',
-                  color: 'white',
-                },
-              }}
-            >
+          <Box sx={{ textAlign: 'center', mt: 5 }}>
+            <Button component={Link} to="/products" variant="outlined" endIcon={<ArrowForward />} sx={{ borderColor: '#b03160', color: '#b03160', borderRadius: '100px', px: 4, py: 1.2, fontFamily: '"PT Serif"', textTransform: 'none', '&:hover': { bgcolor: '#b03160', color: 'white', borderColor: '#b03160' } }}>
               View Full Menu
             </Button>
           </Box>
         </Container>
       </Box>
 
-      {/* Info Section */}
-      <Box sx={{ py: { xs: 6, md: 8 } }}>
-        <Container maxWidth="md" sx={{ textAlign: 'center' }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontFamily: '"Poppins", sans-serif',
-              fontWeight: 500,
-              color: '#b03160',
-              mb: 3,
-              fontSize: { xs: '1.5rem', md: '1.8rem' },
-            }}
-          >
-            Visit Us
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: '"PT Serif", serif',
-              color: '#555',
-              fontSize: '1.05rem',
-              lineHeight: 1.8,
-              mb: 3,
-            }}
-          >
-            60 East Main Street, Broxburn, EH52 5EE<br/>
-            Open 7 days a week
-          </Typography>
-          <Button
-            component={Link}
-            to="/products"
-            variant="contained"
-            size="large"
-            sx={{
-              bgcolor: '#b03160',
-              color: 'white',
-              borderRadius: '100px',
-              px: 5,
-              py: 1.5,
-              fontSize: '1rem',
-              fontFamily: '"PT Serif", serif',
-              fontWeight: 400,
-              textTransform: 'none',
-              boxShadow: 'none',
-              '&:hover': { bgcolor: '#9e3a58', boxShadow: 'none' },
-            }}
-          >
-            Order for Pickup
-          </Button>
-        </Container>
-      </Box>
+      {/* Why Choose Us */}
+      <Container maxWidth="md" sx={{ py: { xs: 6, md: 8 } }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 4, textAlign: 'center' }}>
+          <Box>
+            <Typography sx={{ fontSize: '2rem', mb: 1 }}>🍦</Typography>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, mb: 0.5 }}>Fresh Daily</Typography>
+            <Typography sx={{ fontFamily: '"PT Serif"', color: '#666', fontSize: '0.85rem' }}>Everything made to order with premium ingredients</Typography>
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '2rem', mb: 1 }}>⚡</Typography>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, mb: 0.5 }}>Fast Pickup</Typography>
+            <Typography sx={{ fontFamily: '"PT Serif"', color: '#666', fontSize: '0.85rem' }}>Ready in 10-15 minutes for collection</Typography>
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '2rem', mb: 1 }}>🎁</Typography>
+            <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, mb: 0.5 }}>Earn Rewards</Typography>
+            <Typography sx={{ fontFamily: '"PT Serif"', color: '#666', fontSize: '0.85rem' }}>Loyalty points on every order</Typography>
+          </Box>
+        </Box>
+      </Container>
 
       {/* Modifier Modal */}
       <ModifierModal
@@ -477,19 +244,9 @@ const Home: React.FC = () => {
         product={selectedProduct}
         onAdded={(name) => { setAddedItemName(name); setShowConfirmation(true); }}
       />
-      
-      <Snackbar
-        open={showConfirmation}
-        autoHideDuration={3000}
-        onClose={() => setShowConfirmation(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        sx={{ zIndex: 9999 }}
-      >
-        <Alert 
-          onClose={() => setShowConfirmation(false)} 
-          severity="success" 
-          sx={{ width: '100%', fontSize: '1rem', fontWeight: 500 }}
-        >
+
+      <Snackbar open={showConfirmation} autoHideDuration={2500} onClose={() => setShowConfirmation(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ zIndex: 9999 }}>
+        <Alert onClose={() => setShowConfirmation(false)} severity="success" sx={{ width: '100%' }}>
           {addedItemName} added to cart
         </Alert>
       </Snackbar>

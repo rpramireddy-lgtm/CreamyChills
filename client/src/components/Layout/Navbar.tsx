@@ -127,6 +127,7 @@ const Navbar: React.FC = () => {
             component={Link}
             to="/products"
             variant="contained"
+            color="secondary"
             size="small"
             sx={{
               bgcolor: '#ffffff',

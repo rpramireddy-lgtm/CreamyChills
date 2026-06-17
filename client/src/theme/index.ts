@@ -78,11 +78,26 @@ const theme = createTheme({
             boxShadow: 'none',
           },
         },
-        contained: {
+        containedPrimary: {
+          backgroundColor: '#b03160',
+          color: '#ffffff',
+          '&:hover': {
+            backgroundColor: '#9e3a58',
+          },
+        },
+        containedSecondary: {
           backgroundColor: '#ffffff',
           color: '#000000',
           '&:hover': {
             backgroundColor: '#ebebeb',
+          },
+        },
+        outlinedPrimary: {
+          borderColor: '#b03160',
+          color: '#b03160',
+          '&:hover': {
+            borderColor: '#9e3a58',
+            backgroundColor: 'rgba(176, 49, 96, 0.04)',
           },
         },
       },
