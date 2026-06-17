@@ -53,8 +53,8 @@ const createOrderValidation = [
     .isArray({ min: 1 })
     .withMessage('At least one item is required'),
   body('items.*.product')
-    .isMongoId()
-    .withMessage('Invalid product ID'),
+    .notEmpty()
+    .withMessage('Product ID required'),
   body('items.*.quantity')
     .isInt({ min: 1, max: 50 })
     .withMessage('Quantity must be between 1 and 50'),

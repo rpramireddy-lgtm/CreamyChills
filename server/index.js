@@ -15,17 +15,8 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security: HTTP headers
-app.use(helmet());
-app.use(helmet.contentSecurityPolicy({
-  directives: {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "https://sandbox.web.squarecdn.com", "https://web.squarecdn.com"],
-    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-    fontSrc: ["'self'", "https://fonts.gstatic.com"],
-    imgSrc: ["'self'", "data:", "https:"],
-    connectSrc: ["'self'", "https://connect.squareup.com", "https://connect.squareupsandbox.com"],
-    frameSrc: ["'self'", "https://sandbox.web.squarecdn.com", "https://web.squarecdn.com"]
-  }
+app.use(helmet({
+  contentSecurityPolicy: false
 }));
 
 // Security: CORS - restrict origins

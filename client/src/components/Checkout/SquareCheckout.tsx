@@ -75,27 +75,35 @@ const SquareCheckout: React.FC<SquareCheckoutProps> = ({
       await cardInstance.attach('#card-container');
       setCard(cardInstance);
 
-      // Initialize Apple Pay
-      const paymentRequest = paymentsInstance.paymentRequest({
-        countryCode: 'GB',
-        currencyCode: 'GBP',
-        total: {
-          amount: amount.toString(),
-          label: 'Creamy Chills'
-        }
-      });
+      // Initialize Apple Pay (may fail if domain not registered - that's ok)
+      try {
+        const paymentRequest = paymentsInstance.paymentRequest({
+          countryCode: 'GB',
+          currencyCode: 'GBP',
+          total: { amount: amount.toString(), label: 'Creamy Chills' }
+        });
+        const applePayInstance = await paymentsInstance.applePay(paymentRequest);
+        setApplePay(applePayInstance);
+      } catch (e) {
+        console.log('Apple Pay not available on this domain');
+      }
 
-      const applePayInstance = await paymentsInstance.applePay(paymentRequest);
-      setApplePay(applePayInstance);
-
-      // Initialize Google Pay
-      const googlePayInstance = await paymentsInstance.googlePay(paymentRequest);
-      await googlePayInstance.attach('#google-pay-button');
-      setGooglePay(googlePayInstance);
+      // Initialize Google Pay (may fail - that's ok)
+      try {
+        const paymentRequest = paymentsInstance.paymentRequest({
+          countryCode: 'GB',
+          currencyCode: 'GBP',
+          total: { amount: amount.toString(), label: 'Creamy Chills' }
+        });
+        const googlePayInstance = await paymentsInstance.googlePay(paymentRequest);
+        await googlePayInstance.attach('#google-pay-button');
+        setGooglePay(googlePayInstance);
+      } catch (e) {
+        console.log('Google Pay not available');
+      }
 
     } catch (e) {
       console.error('Square initialization error:', e);
-      setError('Failed to initialize payment methods');
     }
   };
 

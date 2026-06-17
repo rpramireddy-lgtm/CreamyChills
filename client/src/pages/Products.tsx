@@ -219,14 +219,14 @@ const Products: React.FC = () => {
               {selectedProduct.variations?.length > 1 && (
                 <Box sx={{ mb: 2.5 }}>
                   <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#333', mb: 1 }}>Size</Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.5 }}>
                     {selectedProduct.variations.map((v: any) => (
                       <Chip
                         key={v.id}
                         label={`${v.name} • £${v.price.toFixed(2)}`}
                         onClick={() => setSelectedVariation(v)}
                         sx={{
-                          borderRadius: '100px', fontSize: '0.8rem', fontWeight: 500, px: 1, cursor: 'pointer',
+                          borderRadius: '100px', fontSize: '0.72rem', fontWeight: 500, cursor: 'pointer',
                           bgcolor: selectedVariation?.id === v.id ? '#b03160' : 'white',
                           color: selectedVariation?.id === v.id ? 'white' : '#333',
                           border: selectedVariation?.id === v.id ? '1px solid #b03160' : '1px solid #ddd',
@@ -247,7 +247,7 @@ const Products: React.FC = () => {
                       <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#333' }}>{group.name}</Typography>
                       {selected.length > 0 && <Chip label={`${selected.length} selected`} size="small" sx={{ fontSize: '0.65rem', height: 20, bgcolor: '#fcf5f6', color: '#b03160' }} />}
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxHeight: 80, overflow: 'auto' }}>
                       {group.modifiers.map((mod: any) => {
                         const isSelected = selected.includes(mod.name);
                         return (

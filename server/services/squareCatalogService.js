@@ -43,25 +43,76 @@ class SquareCatalogService {
       if (img.imageData?.url) imageMap[img.id] = img.imageData.url;
     });
 
-    // Build category map (deduplicate by name)
+    // Category mapping: merge retail categories and clean up for online menu
+    const CATEGORY_MAP = {
+      // Keep as-is (desserts)
+      'Waffles': 'Waffles',
+      'Ice Cream': 'Ice Cream',
+      'Cookie Dough': 'Cookie Dough',
+      'Lollipop Waffle': 'Waffles',
+      'Crepes': 'Crepes',
+      'Sundaes': 'Sundaes',
+      'Milkshakes': 'Milkshakes',
+      'Brownies': 'Brownies',
+      'Doughnuts': 'Doughnuts',
+      'Cheesecakes': 'Cheesecakes',
+      'Cakes': 'Cakes',
+      'Loaded Dubai Kunafa ': 'Loaded Kunafa',
+      'Loaded Dubai Kunafa': 'Loaded Kunafa',
+      'Slushee': 'Slushee',
+      'Tango Ice Blast': 'Tango Ice Blast',
+      '🎁 Dessert Bundles': 'Dessert Bundles',
+      '🍓🍌 Fresh  Fruit Tubs': 'Fresh Fruit',
+      'Fresh Fruit / Chilled': 'Fresh Fruit',
+      // Drinks
+      'Drinks(American, Japanese and etc..)': 'Drinks',
+      'Drinks': 'Drinks',
+      'Caffe Latte': 'Drinks',
+      // Merge into Snacks & Sweets
+      'American Candy': 'Snacks & Sweets',
+      'Candy King Pick & Mix': 'Snacks & Sweets',
+      'JOLLY RANCHER': 'Snacks & Sweets',
+      'Airheads (Bags)': 'Snacks & Sweets',
+      'Hot Tamales': 'Snacks & Sweets',
+      'Sour Patch Kids': 'Snacks & Sweets',
+      'Airheads Bars (Singles)': 'Snacks & Sweets',
+      'Airheads Gum': 'Snacks & Sweets',
+      'Nerds Rope': 'Snacks & Sweets',
+      'Mike and Ike (22g Singles)': 'Snacks & Sweets',
+      'Mike and Ike (120g Packs)': 'Snacks & Sweets',
+      'Nerds – Mixed Category': 'Snacks & Sweets',
+      'Milka': 'Snacks & Sweets',
+      'Crisps': 'Snacks & Sweets',
+      'Lays': 'Snacks & Sweets',
+      'Pringles': 'Snacks & Sweets',
+      'Takis': 'Snacks & Sweets',
+      'Tyrrells': 'Snacks & Sweets',
+      'Popping Boba': 'Snacks & Sweets',
+      'Candy': 'Snacks & Sweets',
+      'Snacks': 'Snacks & Sweets',
+      'choclates': 'Snacks & Sweets',
+      'Aero Scoops': 'Snacks & Sweets',
+    };
+
+    // Hidden categories (don't show online)
+    const HIDDEN_CATEGORIES = ['Sauces', 'Online Menu', '⭐ Best Sellers', 'Extras', 'Inventory', 'Ingredients Stock Management'];
+
+    // Build category map with merging
     const categoryMap = {};
-    const seenNames = new Set();
-    const uniqueCategories = [];
+    const finalCategories = new Map(); // name -> slug
 
     categories.forEach(c => {
-      const name = c.categoryData?.name;
-      if (!name || seenNames.has(name)) return;
-      if (['Ingredients Stock Management', 'Inventory'].includes(name)) return;
-      seenNames.add(name);
-      categoryMap[c.id] = name;
-      uniqueCategories.push({ id: c.id, name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') });
-    });
-    // Also map duplicate category IDs to same name
-    categories.forEach(c => {
-      if (c.categoryData?.name && seenNames.has(c.categoryData.name)) {
-        categoryMap[c.id] = c.categoryData.name;
+      const rawName = c.categoryData?.name;
+      if (!rawName) return;
+      const mappedName = CATEGORY_MAP[rawName] || rawName;
+      if (HIDDEN_CATEGORIES.includes(rawName) || HIDDEN_CATEGORIES.includes(mappedName)) return;
+      categoryMap[c.id] = mappedName;
+      if (!finalCategories.has(mappedName)) {
+        finalCategories.set(mappedName, mappedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
       }
     });
+
+    const uniqueCategories = Array.from(finalCategories.entries()).map(([name, slug], i) => ({ id: slug, name, slug }));
 
     // Build modifier groups
     const modifierGroups = modifierLists.map(m => {
@@ -84,6 +135,13 @@ class SquareCatalogService {
       const catId = data?.categories?.[0]?.id || data?.reportingCategory?.id;
       const categoryName = categoryMap[catId] || 'Other';
       const categorySlug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+      // Skip items in hidden categories
+      if (!categoryName || categoryName === 'Other') {
+        // Check if the raw category was hidden
+        const rawCat = categories.find(c => c.id === catId);
+        if (rawCat && HIDDEN_CATEGORIES.includes(rawCat.categoryData?.name)) return null;
+      }
 
       // Variations (sizes)
       const variations = (data?.variations || []).map(v => ({
@@ -111,7 +169,7 @@ class SquareCatalogService {
         modifiers: linkedModifiers,
         inStock: !item.isDeleted
       };
-    }).filter(p => p.name);
+    }).filter(p => p && p.name);
 
     const result = { products, categories: uniqueCategories, modifierGroups };
     cache = { data: result, timestamp: Date.now() };
