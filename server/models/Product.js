@@ -2,14 +2,13 @@ const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, default: '' },
   category: { 
     type: String, 
-    required: true,
-    enum: ['ice-cream', 'waffle', 'cake', 'milkshake', 'drink', 'crepe', 'cookie-dough', 'sundae', 'loaded-kunafa', 'slush', 'donut', 'smoothie', 'hot-drink', 'extras']
+    required: true
   },
   price: { type: Number, required: true },
-  image: { type: String, required: true },
+  image: { type: String, default: '' },
   images: [String], // Additional images
   inStock: { type: Boolean, default: true },
   featured: { type: Boolean, default: false },
