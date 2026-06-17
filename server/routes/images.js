@@ -1,121 +1,120 @@
 const express = require('express');
 const multer = require('multer');
+const { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const path = require('path');
-const fs = require('fs');
 const { auth, adminAuth } = require('../middleware/auth');
 const router = express.Router();
 
-// Multer storage config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '..', 'uploads');
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  }
+const s3 = new S3Client({
+  region: process.env.AWS_REGION || 'eu-west-2',
+  credentials: process.env.AWS_ACCESS_KEY_ID ? {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  } : undefined // Uses instance role if no keys
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  if (allowed.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only JPEG, PNG, and WebP images are allowed'), false);
-  }
-};
+const BUCKET = process.env.S3_BUCKET || 'creamychills-assets';
+const CDN_URL = process.env.CDN_URL || `https://${BUCKET}.s3.eu-west-2.amazonaws.com`;
 
+// Multer memory storage (file stays in memory, goes straight to S3)
 const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    cb(null, allowed.includes(file.mimetype));
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// Upload single image
-router.post('/upload', auth, adminAuth, upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'No image uploaded' });
+// Upload single image to S3
+router.post('/upload', auth, adminAuth, upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
+
+  try {
+    const ext = path.extname(req.file.originalname);
+    const key = `products/${Date.now()}-${Math.round(Math.random() * 1E6)}${ext}`;
+
+    await s3.send(new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype
+    }));
+
+    const url = `${CDN_URL}/${key}`;
+    res.status(201).json({ message: 'Image uploaded', url, key, size: req.file.size });
+  } catch (error) {
+    console.error('S3 upload error:', error);
+    res.status(500).json({ message: 'Upload failed' });
   }
-
-  const imageUrl = `/uploads/${req.file.filename}`;
-  res.status(201).json({
-    message: 'Image uploaded',
-    filename: req.file.filename,
-    url: imageUrl,
-    size: req.file.size,
-    mimetype: req.file.mimetype
-  });
 });
 
-// Bulk upload images
-router.post('/upload/bulk', auth, adminAuth, upload.array('images', 20), (req, res) => {
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ message: 'No images uploaded' });
-  }
+// Bulk upload
+router.post('/upload/bulk', auth, adminAuth, upload.array('images', 20), async (req, res) => {
+  if (!req.files?.length) return res.status(400).json({ message: 'No images uploaded' });
 
-  const images = req.files.map(file => ({
-    filename: file.filename,
-    url: `/uploads/${file.filename}`,
-    size: file.size,
-    originalName: file.originalname
-  }));
+  try {
+    const images = [];
+    for (const file of req.files) {
+      const ext = path.extname(file.originalname);
+      const key = `products/${Date.now()}-${Math.round(Math.random() * 1E6)}${ext}`;
 
-  res.status(201).json({
-    message: `${images.length} images uploaded`,
-    images
-  });
-});
+      await s3.send(new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype
+      }));
 
-// List all uploaded images
-router.get('/', auth, adminAuth, (req, res) => {
-  const uploadDir = path.join(__dirname, '..', 'uploads');
-  
-  if (!fs.existsSync(uploadDir)) {
-    return res.json({ images: [] });
-  }
-
-  const files = fs.readdirSync(uploadDir)
-    .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
-    .map(f => {
-      const stats = fs.statSync(path.join(uploadDir, f));
-      return {
-        filename: f,
-        url: `/uploads/${f}`,
-        size: stats.size,
-        uploadedAt: stats.mtime
-      };
-    })
-    .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
-
-  res.json({ images: files, total: files.length });
-});
-
-// Delete image
-router.delete('/:filename', auth, adminAuth, (req, res) => {
-  const filepath = path.join(__dirname, '..', 'uploads', req.params.filename);
-  
-  if (!fs.existsSync(filepath)) {
-    return res.status(404).json({ message: 'Image not found' });
-  }
-
-  fs.unlinkSync(filepath);
-  res.json({ message: 'Image deleted' });
-});
-
-// Error handler for multer
-router.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ message: 'File too large. Maximum 5MB.' });
+      images.push({ url: `${CDN_URL}/${key}`, key, originalName: file.originalname, size: file.size });
     }
-    return res.status(400).json({ message: err.message });
+
+    res.status(201).json({ message: `${images.length} images uploaded`, images });
+  } catch (error) {
+    console.error('S3 bulk upload error:', error);
+    res.status(500).json({ message: 'Upload failed' });
   }
-  if (err) {
-    return res.status(400).json({ message: err.message });
+});
+
+// List images from S3
+router.get('/', auth, adminAuth, async (req, res) => {
+  try {
+    const response = await s3.send(new ListObjectsV2Command({
+      Bucket: BUCKET,
+      Prefix: 'products/',
+      MaxKeys: 200
+    }));
+
+    const images = (response.Contents || [])
+      .filter(obj => /\.(jpg|jpeg|png|webp)$/i.test(obj.Key))
+      .map(obj => ({
+        key: obj.Key,
+        url: `${CDN_URL}/${obj.Key}`,
+        filename: obj.Key.split('/').pop(),
+        size: obj.Size,
+        uploadedAt: obj.LastModified
+      }))
+      .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+
+    res.json({ images, total: images.length });
+  } catch (error) {
+    console.error('S3 list error:', error);
+    res.json({ images: [], total: 0 });
   }
-  next();
+});
+
+// Delete image from S3
+router.delete('/:key(*)', auth, adminAuth, async (req, res) => {
+  try {
+    await s3.send(new DeleteObjectCommand({
+      Bucket: BUCKET,
+      Key: req.params.key
+    }));
+    res.json({ message: 'Image deleted' });
+  } catch (error) {
+    console.error('S3 delete error:', error);
+    res.status(500).json({ message: 'Delete failed' });
+  }
 });
 
 module.exports = router;
