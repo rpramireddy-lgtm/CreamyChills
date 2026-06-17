@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Box, Card, CardMedia, CardContent, Button, Chip, Tabs, Tab,
-  Snackbar, Alert, Skeleton, TextField, InputAdornment, Dialog, DialogContent, DialogActions,
-  Radio, RadioGroup, FormControlLabel, Checkbox, IconButton, Divider
+  Snackbar, Alert, Skeleton, TextField, InputAdornment, Dialog, DialogContent,
+  IconButton
 } from '@mui/material';
 import { Search as SearchIcon, Close, Add, Remove } from '@mui/icons-material';
 import { useLocation } from 'react-router-dom';
@@ -200,91 +200,92 @@ const Products: React.FC = () => {
         )}
       </Container>
 
-      {/* ORDERING DIALOG — Step by step like Square */}
-      <Dialog open={!!selectedProduct} onClose={() => setSelectedProduct(null)} maxWidth="sm" fullWidth>
+      {/* ORDERING DIALOG — Step-by-step wizard, no scrolling */}
+      <Dialog open={!!selectedProduct} onClose={() => setSelectedProduct(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3, maxHeight: '85vh' } }}>
         {selectedProduct && (
           <>
-            <Box sx={{ position: 'relative' }}>
-              {selectedProduct.image && (
-                <Box component="img" src={selectedProduct.image} sx={{ width: '100%', height: 200, objectFit: 'cover' }} />
-              )}
-              <IconButton onClick={() => setSelectedProduct(null)} sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'white' }}><Close /></IconButton>
+            {/* Header with image */}
+            <Box sx={{ position: 'relative', height: selectedProduct.image ? 160 : 0 }}>
+              {selectedProduct.image && <Box component="img" src={selectedProduct.image} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              <IconButton onClick={() => setSelectedProduct(null)} sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'white', width: 32, height: 32 }}><Close sx={{ fontSize: 18 }} /></IconButton>
             </Box>
 
-            <DialogContent sx={{ p: 3 }}>
-              <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '1.3rem', mb: 0.5 }}>{selectedProduct.name}</Typography>
-              {selectedProduct.description && <Typography sx={{ color: '#666', fontSize: '0.85rem', mb: 2 }}>{selectedProduct.description}</Typography>}
+            <DialogContent sx={{ p: 2.5, overflow: 'auto' }}>
+              {/* Item name + price */}
+              <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '1.1rem', mb: 0.3 }}>{selectedProduct.name}</Typography>
+              {selectedProduct.description && <Typography sx={{ color: '#888', fontSize: '0.78rem', mb: 2 }}>{selectedProduct.description}</Typography>}
 
-              {/* Step 1: Size/Variation */}
+              {/* Variations as pill buttons */}
               {selectedProduct.variations?.length > 1 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.95rem', mb: 1.5 }}>Choose Size</Typography>
-                  <RadioGroup value={selectedVariation?.id || ''} onChange={(e) => setSelectedVariation(selectedProduct.variations.find((v: any) => v.id === e.target.value))}>
+                <Box sx={{ mb: 2.5 }}>
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#333', mb: 1 }}>Size</Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     {selectedProduct.variations.map((v: any) => (
-                      <FormControlLabel key={v.id} value={v.id} control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#b03160' } }} />}
-                        label={<Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
-                          <Typography sx={{ fontSize: '0.9rem' }}>{v.name}</Typography>
-                          <Typography sx={{ fontSize: '0.9rem', fontWeight: 500, color: '#b03160' }}>£{v.price.toFixed(2)}</Typography>
-                        </Box>}
-                        sx={{ border: '1px solid #e0e0e0', borderRadius: 1, mb: 0.5, mx: 0, pr: 0, ...(selectedVariation?.id === v.id ? { border: '1px solid #b03160', bgcolor: '#fcf5f6' } : {}) }}
+                      <Chip
+                        key={v.id}
+                        label={`${v.name} • £${v.price.toFixed(2)}`}
+                        onClick={() => setSelectedVariation(v)}
+                        sx={{
+                          borderRadius: '100px', fontSize: '0.8rem', fontWeight: 500, px: 1, cursor: 'pointer',
+                          bgcolor: selectedVariation?.id === v.id ? '#b03160' : 'white',
+                          color: selectedVariation?.id === v.id ? 'white' : '#333',
+                          border: selectedVariation?.id === v.id ? '1px solid #b03160' : '1px solid #ddd',
+                          '&:hover': { bgcolor: selectedVariation?.id === v.id ? '#9e3a58' : '#fcf5f6' }
+                        }}
                       />
                     ))}
-                  </RadioGroup>
+                  </Box>
                 </Box>
               )}
 
-              {/* Step 2+: Modifier Groups */}
-              {selectedProduct.modifiers?.map((group: any) => (
-                <Box key={group.id} sx={{ mb: 3 }}>
-                  <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.95rem', mb: 0.5 }}>{group.name}</Typography>
-                  <Typography sx={{ fontSize: '0.75rem', color: '#999', mb: 1.5 }}>
-                    {group.selectionType === 'SINGLE' ? 'Choose one' : 'Select as many as you like'}
-                  </Typography>
+              {/* Modifier groups as collapsible chip selectors */}
+              {selectedProduct.modifiers?.map((group: any) => {
+                const selected = selectedModifiers[group.id] || [];
+                return (
+                  <Box key={group.id} sx={{ mb: 2.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#333' }}>{group.name}</Typography>
+                      {selected.length > 0 && <Chip label={`${selected.length} selected`} size="small" sx={{ fontSize: '0.65rem', height: 20, bgcolor: '#fcf5f6', color: '#b03160' }} />}
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                      {group.modifiers.map((mod: any) => {
+                        const isSelected = selected.includes(mod.name);
+                        return (
+                          <Chip
+                            key={mod.id}
+                            label={mod.price > 0 ? `${mod.name} +£${mod.price.toFixed(2)}` : mod.name}
+                            onClick={() => toggleModifier(group.id, mod.name, group.selectionType)}
+                            size="small"
+                            sx={{
+                              fontSize: '0.72rem', cursor: 'pointer', borderRadius: '100px',
+                              bgcolor: isSelected ? '#b03160' : 'white',
+                              color: isSelected ? 'white' : '#555',
+                              border: isSelected ? '1px solid #b03160' : '1px solid #e0e0e0',
+                              '&:hover': { bgcolor: isSelected ? '#9e3a58' : '#fcf5f6' }
+                            }}
+                          />
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                );
+              })}
 
-                  {group.modifiers.map((mod: any) => {
-                    const isSelected = (selectedModifiers[group.id] || []).includes(mod.name);
-                    return (
-                      <Box
-                        key={mod.id}
-                        onClick={() => toggleModifier(group.id, mod.name, group.selectionType)}
-                        sx={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          p: 1.5, mb: 0.5, borderRadius: 1, cursor: 'pointer',
-                          border: isSelected ? '1px solid #b03160' : '1px solid #e0e0e0',
-                          bgcolor: isSelected ? '#fcf5f6' : 'white',
-                          '&:hover': { bgcolor: '#fafafa' }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {group.selectionType === 'SINGLE'
-                            ? <Radio checked={isSelected} size="small" sx={{ p: 0, '&.Mui-checked': { color: '#b03160' } }} />
-                            : <Checkbox checked={isSelected} size="small" sx={{ p: 0, '&.Mui-checked': { color: '#b03160' } }} />
-                          }
-                          <Typography sx={{ fontSize: '0.88rem' }}>{mod.name}</Typography>
-                        </Box>
-                        {mod.price > 0 && <Typography sx={{ fontSize: '0.85rem', color: '#b03160', fontWeight: 500 }}>+£{mod.price.toFixed(2)}</Typography>}
-                      </Box>
-                    );
-                  })}
-                </Box>
-              ))}
-
-              <Divider sx={{ my: 2 }} />
-
-              {/* Quantity */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                <IconButton onClick={() => setQuantity(Math.max(1, quantity - 1))} sx={{ border: '1px solid #ddd' }}><Remove /></IconButton>
-                <Typography sx={{ fontWeight: 600, fontSize: '1.2rem' }}>{quantity}</Typography>
-                <IconButton onClick={() => setQuantity(Math.min(10, quantity + 1))} sx={{ border: '1px solid #ddd' }}><Add /></IconButton>
+              {/* Quantity - compact */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 1 }}>
+                <IconButton onClick={() => setQuantity(Math.max(1, quantity - 1))} size="small" sx={{ border: '1px solid #ddd', width: 32, height: 32 }}><Remove sx={{ fontSize: 16 }} /></IconButton>
+                <Typography sx={{ fontWeight: 600 }}>{quantity}</Typography>
+                <IconButton onClick={() => setQuantity(Math.min(10, quantity + 1))} size="small" sx={{ border: '1px solid #ddd', width: 32, height: 32 }}><Add sx={{ fontSize: 16 }} /></IconButton>
               </Box>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, pt: 0 }}>
+            {/* Sticky footer with total */}
+            <Box sx={{ p: 2, borderTop: '1px solid #f0e8e8' }}>
               <Button fullWidth variant="contained" onClick={handleAddToCart}
-                sx={{ bgcolor: '#b03160', '&:hover': { bgcolor: '#9e3a58' }, borderRadius: '100px', py: 1.5, textTransform: 'none', fontFamily: '"PT Serif"', fontSize: '1rem', boxShadow: 'none' }}>
+                sx={{ bgcolor: '#b03160', '&:hover': { bgcolor: '#9e3a58' }, borderRadius: '100px', py: 1.3, textTransform: 'none', fontFamily: '"Poppins"', fontSize: '0.95rem', fontWeight: 500, boxShadow: 'none' }}>
                 Add to Cart — £{getTotal().toFixed(2)}
               </Button>
-            </DialogActions>
+            </Box>
           </>
         )}
       </Dialog>
