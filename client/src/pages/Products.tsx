@@ -78,7 +78,17 @@ const Products: React.FC = () => {
     const requiredGroups = (selectedProduct.modifiers || []).filter((g: any) =>
       g.required || g.name.toLowerCase().includes('cone') || g.name.toLowerCase().includes('whipp')
     );
-    return requiredGroups.every((g: any) => (selectedModifiers[g.id]?.length || 0) > 0);
+    if (!requiredGroups.every((g: any) => (selectedModifiers[g.id]?.length || 0) > 0)) return false;
+    // Check mix limits are met
+    const mixGroups = (selectedProduct.modifiers || []).filter((g: any) => g.name.toLowerCase().includes('mix of any'));
+    for (const g of mixGroups) {
+      const isMix2 = g.name.toLowerCase().includes('mix of any 2');
+      const isMix3 = g.name.toLowerCase().includes('mix of any 3');
+      const required = isMix2 ? 2 : isMix3 ? 3 : 0;
+      const picked = (selectedModifiers[g.id] || []).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).length;
+      if (required > 0 && picked < required) return false;
+    }
+    return true;
   };
 
   const handleAddToCart = () => {
@@ -204,49 +214,76 @@ const Products: React.FC = () => {
                 </Box>
               )}
 
-              {/* MODIFIER SECTIONS */}
-              {selectedProduct.modifiers?.map((group: any) => {
+              {/* MODIFIER SECTIONS - sorted: required first (cone after size), then optional */}
+              {[...(selectedProduct.modifiers || [])]
+                .sort((a: any, b: any) => {
+                  const aReq = a.required || a.name.toLowerCase().includes("cone") || a.name.toLowerCase().includes("whipp");
+                  const bReq = b.required || b.name.toLowerCase().includes("cone") || b.name.toLowerCase().includes("whipp");
+                  if (aReq && !bReq) return -1;
+                  if (!aReq && bReq) return 1;
+                  if (a.name.toLowerCase().includes("cone")) return -1;
+                  if (b.name.toLowerCase().includes("cone")) return 1;
+                  return 0;
+                })
+                .map((group: any) => {
                 const selected = selectedModifiers[group.id] || [];
-                const isRequired = group.required || group.name.toLowerCase().includes('cone') || group.name.toLowerCase().includes('whipp');
+                const isRequired = group.required || group.name.toLowerCase().includes("cone") || group.name.toLowerCase().includes("whipp");
                 const isSinglePick = isRequired;
+                const isMix2 = group.name.toLowerCase().includes("mix of any 2");
+                const isMix3 = group.name.toLowerCase().includes("mix of any 3");
+                const maxPicks = isMix2 ? 2 : isMix3 ? 3 : 0;
+                const uniqueSelected = selected.filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
+                const atLimit = maxPicks > 0 && uniqueSelected.length >= maxPicks;
 
                 return (
                   <Box key={group.id} sx={{ mb: 3 }}>
                     <Divider sx={{ mb: 2 }} />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                      <Typography sx={{ fontWeight: 600, fontSize: '0.95rem' }}>{group.name}</Typography>
-                      {isRequired
-                        ? <Chip label="Required" size="small" sx={{ bgcolor: '#fff0f3', color: '#b03160', fontSize: '0.7rem', height: 22 }} />
-                        : <Chip label="Optional" size="small" sx={{ bgcolor: '#f5f5f5', color: '#888', fontSize: '0.7rem', height: 22 }} />
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>{group.name}</Typography>
+                      {(isRequired || maxPicks > 0)
+                        ? <Chip label={maxPicks > 0 ? `${uniqueSelected.length}/${maxPicks} chosen` : "Required"} size="small" sx={{ bgcolor: (maxPicks > 0 && uniqueSelected.length === maxPicks) ? "#e8f5e9" : "#fff0f3", color: (maxPicks > 0 && uniqueSelected.length === maxPicks) ? "#2e7d32" : "#b03160", fontSize: "0.7rem", height: 22 }} />
+                        : <Chip label="Optional" size="small" sx={{ bgcolor: "#f5f5f5", color: "#888", fontSize: "0.7rem", height: 22 }} />
                       }
                     </Box>
-                    {!isRequired && <Typography sx={{ fontSize: '0.75rem', color: '#999', mb: 1 }}>Choose as many as you like</Typography>}
+                    {maxPicks > 0 && <Typography sx={{ fontSize: "0.75rem", color: "#999", mb: 1 }}>Choose exactly {maxPicks} flavour{maxPicks > 1 ? "s" : ""}</Typography>}
+                    {!isRequired && !maxPicks && <Typography sx={{ fontSize: "0.75rem", color: "#999", mb: 1 }}>Choose as many as you like</Typography>}
 
                     {group.modifiers.map((mod: any) => {
                       const isSelected = selected.includes(mod.name);
+                      const itemCount = selected.filter((x: string) => x === mod.name).length;
+                      const disabledByLimit = maxPicks > 0 && !isSelected && atLimit;
                       return (
-                        <Box key={mod.id} onClick={() => {
-                          if (isSinglePick) {
-                            setSelectedModifiers({ ...selectedModifiers, [group.id]: [mod.name] });
-                          } else {
-                            const updated = isSelected ? selected.filter((x: string) => x !== mod.name) : [...selected, mod.name];
-                            setSelectedModifiers({ ...selectedModifiers, [group.id]: updated });
-                          }
-                        }} sx={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          p: 1.5, mb: 0.5, borderRadius: 1.5, cursor: 'pointer',
-                          border: isSelected ? '2px solid #b03160' : '1px solid #e8e8e8',
-                          bgcolor: isSelected ? '#fff8f4' : 'white',
-                          '&:hover': { bgcolor: '#fafafa' }
+                        <Box key={mod.id} sx={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          p: 1.5, mb: 0.5, borderRadius: 1.5, opacity: disabledByLimit ? 0.4 : 1,
+                          border: isSelected ? "2px solid #b03160" : "1px solid #e8e8e8",
+                          bgcolor: isSelected ? "#fff8f4" : "white",
                         }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                             {isSinglePick
-                              ? <Radio checked={isSelected} size="small" sx={{ p: 0, '&.Mui-checked': { color: '#b03160' } }} />
-                              : <Checkbox checked={isSelected} size="small" sx={{ p: 0, '&.Mui-checked': { color: '#b03160' } }} />
+                              ? <Radio checked={isSelected} size="small" sx={{ p: 0, "&.Mui-checked": { color: "#b03160" } }} onClick={() => setSelectedModifiers({ ...selectedModifiers, [group.id]: [mod.name] })} />
+                              : <Checkbox checked={isSelected} size="small" disabled={disabledByLimit} sx={{ p: 0, "&.Mui-checked": { color: "#b03160" } }} onClick={() => {
+                                  if (maxPicks > 0) {
+                                    const updated = isSelected ? uniqueSelected.filter((x: string) => x !== mod.name) : (uniqueSelected.length < maxPicks ? [...uniqueSelected, mod.name] : uniqueSelected);
+                                    setSelectedModifiers({ ...selectedModifiers, [group.id]: updated });
+                                  } else {
+                                    const updated = isSelected ? selected.filter((x: string) => x !== mod.name) : [...selected, mod.name];
+                                    setSelectedModifiers({ ...selectedModifiers, [group.id]: updated });
+                                  }
+                                }} />
                             }
-                            <Typography sx={{ fontSize: '0.9rem' }}>{mod.name}</Typography>
+                            <Typography sx={{ fontSize: "0.9rem" }}>{mod.name}</Typography>
                           </Box>
-                          {mod.price > 0 && <Typography sx={{ fontSize: '0.85rem', color: '#b03160', fontWeight: 500 }}>+£{mod.price.toFixed(2)}</Typography>}
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            {mod.price > 0 && <Typography sx={{ fontSize: "0.85rem", color: "#b03160", fontWeight: 500 }}>+£{mod.price.toFixed(2)}</Typography>}
+                            {!isSinglePick && !maxPicks && isSelected && (
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, ml: 1 }}>
+                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); const updated = [...selected]; const idx = updated.lastIndexOf(mod.name); if (idx > -1) updated.splice(idx, 1); setSelectedModifiers({ ...selectedModifiers, [group.id]: updated }); }} sx={{ width: 24, height: 24, border: "1px solid #ddd" }}><Remove sx={{ fontSize: 14 }} /></IconButton>
+                                <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, minWidth: 16, textAlign: "center" }}>{itemCount}</Typography>
+                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); setSelectedModifiers({ ...selectedModifiers, [group.id]: [...selected, mod.name] }); }} sx={{ width: 24, height: 24, border: "1px solid #ddd" }}><Add sx={{ fontSize: 14 }} /></IconButton>
+                              </Box>
+                            )}
+                          </Box>
                         </Box>
                       );
                     })}
