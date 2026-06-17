@@ -146,7 +146,18 @@ const AdminDashboard: React.FC = () => {
         {/* 0: Dashboard */}
         {tab === 0 && stats && (
           <Box>
-            <Typography variant="h5" sx={{ fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160', mb: 3 }}>Dashboard</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" sx={{ fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160' }}>Dashboard</Typography>
+              <Button variant="contained" onClick={async () => {
+                try {
+                  const res = await api.post('/sync/pull');
+                  alert('✅ Sync complete! Menu updated from Square POS.');
+                  fetchStats();
+                } catch (e: any) { alert('Sync failed: ' + (e.response?.data?.message || e.message)); }
+              }} sx={{ bgcolor: '#b03160', textTransform: 'none', borderRadius: '100px', '&:hover': { bgcolor: '#9e3a58' } }}>
+                🔄 Sync from Square
+              </Button>
+            </Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(4,1fr)' }, gap: 2, mb: 3 }}>
               {[
                 { l: "Today's Orders", v: stats.todayOrders },
@@ -428,6 +439,19 @@ const AdminDashboard: React.FC = () => {
           <Box>
             <Typography variant="h5" sx={{ fontFamily: '"Poppins"', fontWeight: 500, color: '#b03160', mb: 3 }}>Staff Quick Links</Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)' }, gap: 2 }}>
+              <Card sx={{ border: '2px solid #b03160' }}>
+                <CardContent>
+                  <Typography sx={{ fontWeight: 500, fontSize: '1.1rem', mb: 1 }}>🔄 Sync from Square POS</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Pull latest menu items, categories, modifiers and images from your Square POS into the website.</Typography>
+                  <Button variant="contained" onClick={async () => {
+                    try {
+                      const res = await api.post('/sync/pull');
+                      alert('Sync complete! ' + (res.data.message || ''));
+                      fetchStats();
+                    } catch (e: any) { alert('Sync failed: ' + (e.response?.data?.message || e.message)); }
+                  }} sx={{ bgcolor: '#b03160', textTransform: 'none', borderRadius: '100px' }}>Sync Now</Button>
+                </CardContent>
+              </Card>
               <Card sx={{ cursor: 'pointer' }} onClick={() => window.open('/kitchen', '_blank')}>
                 <CardContent>
                   <Typography sx={{ fontWeight: 500, fontSize: '1.1rem', mb: 1 }}>🍳 Kitchen Display</Typography>

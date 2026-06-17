@@ -94,6 +94,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Routes
 app.use('/api/products', require('./routes/products'));
+app.use('/api/menu', require('./routes/menu'));
 app.use('/api/items', require('./routes/items'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/modifiers', require('./routes/modifiers'));
