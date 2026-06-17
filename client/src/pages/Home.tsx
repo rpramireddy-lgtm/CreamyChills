@@ -2,19 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Card, CardMedia, CardContent, Button, Chip, Snackbar, Alert } from '@mui/material';
 import { ArrowForward, AccessTime, LocationOn, Star } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { productsAPI } from '../services/api';
+import axios from 'axios';
 import ModifierModal from '../components/ModifierModal';
 import SEO from '../components/SEO';
 
 interface Product {
-  _id: string;
+  id: string;
+  _id?: string;
   name: string;
   description: string;
-  price: number;
+  price?: number;
   image: string;
   category: string;
-  featured: boolean;
-  inStock: boolean;
+  categorySlug?: string;
+  featured?: boolean;
+  inStock?: boolean;
+  variations?: Array<{ id: string; name: string; price: number }>;
+  modifiers?: any[];
 }
 
 const isOpen = () => {
@@ -36,8 +40,10 @@ const Home: React.FC = () => {
 
   const fetchFeaturedProducts = async () => {
     try {
-      const response = await productsAPI.getAll({ featured: true, limit: 8 });
-      setFeaturedProducts(response.data.products || []);
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || 'https://staging.creamychills.com/api'}/menu`);
+      const allProducts = res.data.products || [];
+      const withImages = allProducts.filter((p: any) => p.image);
+      setFeaturedProducts(withImages.slice(0, 8));
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
   };
@@ -199,7 +205,9 @@ const Home: React.FC = () => {
                   <CardContent sx={{ p: 2 }}>
                     <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 500, fontSize: '0.88rem', color: '#333', mb: 0.5, lineHeight: 1.2 }}>{product.name}</Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                      <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 600, color: '#b03160', fontSize: '1rem' }}>£{product.price.toFixed(2)}</Typography>
+                      <Typography sx={{ fontFamily: '"Poppins"', fontWeight: 600, color: '#b03160', fontSize: '1rem' }}>
+                        {(product.variations?.length ?? 0) > 0 ? `£${product.variations![0].price.toFixed(2)}` : ''}
+                      </Typography>
                       <Chip label="Add" size="small" sx={{ bgcolor: '#b03160', color: 'white', fontSize: '0.7rem', height: 24, cursor: 'pointer' }} />
                     </Box>
                   </CardContent>
