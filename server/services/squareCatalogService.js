@@ -129,6 +129,130 @@ class SquareCatalogService {
       };
     });
 
+    const S3_BASE = process.env.CDN_URL || 'https://creamychills-assets.s3.eu-west-2.amazonaws.com';
+
+    // S3 image fallback mapping (filename without extension → S3 URL)
+    const S3_IMAGE_MAP = {
+      // Ice Cream
+      'belgian chocolate': 'menu/IceCreams/Belgain Choclate Icecream.jpg',
+      'biscoff crunch': 'menu/IceCreams/Biscoff Crunch.jpg',
+      'bubblegum': 'menu/IceCreams/Bubblegum.jpg',
+      'chocolate fudge brownie': 'menu/IceCreams/Choclate Fudge Brownie.jpg',
+      'cookie dough ice cream': 'menu/IceCreams/Chocochip COokie Dough.jpg',
+      'cinnamon bun': 'menu/IceCreams/Cinamon Bun.jpg',
+      'double bubble': 'menu/IceCreams/Double Bubble.jpg',
+      'ferrero rocher': 'menu/IceCreams/Ferroro Rocher.jpg',
+      'honeycomb crunch': 'menu/IceCreams/Honeycomb Crunch.jpg',
+      'irn bru': 'menu/IceCreams/Irn Bru.jpg',
+      'isle of sky': 'menu/IceCreams/Isle of Sky.jpg',
+      'isle of skye': 'menu/IceCreams/Isle of Sky.jpg',
+      'mango tango': 'menu/IceCreams/Mango Tango.jpg',
+      'raspberry ripple': 'menu/IceCreams/Rasberry Ripple.jpg',
+      'strawberry ripple': 'menu/IceCreams/Strawberry Ripple.jpg',
+      'toffee fudge': 'menu/IceCreams/Toffe Fudge.jpg',
+      'vanilla': 'menu/IceCreams/Vanilla Icecream.jpg',
+      'double cream': 'menu/IceCreams/Vanilla Icecream.jpg',
+      'vegan vanilla': 'menu/IceCreams/Vegan Vanilla.jpg',
+      'christmas pudding': 'menu/IceCreams/Christmas Pudding.jpg',
+      // Milkshakes
+      'biscoff milkshake': 'menu/Milkshakes/Biscoff Milkshake.jpeg',
+      'kinder bueno milkshake': 'menu/Milkshakes/Kinder Bueno Milkshake.jpeg',
+      'maltesers milkshake': 'menu/Milkshakes/Maltesers Milkshake.jpeg',
+      'nutella milkshake': 'menu/Milkshakes/Nutella Milkshake.jpeg',
+      'oreo milkshake': 'menu/Milkshakes/Oreo Milkshake.jpeg',
+      'dubai milkshake': 'menu/Milkshakes/Dubai Milkshake.jpg',
+      'twix milkshake': 'menu/Milkshakes/Twix Milkshake.jpg',
+      'strawberry milkshake': 'menu/Milkshakes/Strawberry.jpg',
+      'bubblegum milkshake': 'menu/Milkshakes/Bubblegum.jpg',
+      'mango milkshake': 'menu/Milkshakes/Mango.jpg',
+      'raspberry milkshake': 'menu/Milkshakes/Rasberry.jpg',
+      'mars milkshake': 'menu/Milkshakes/Mars.jpg',
+      'pistachio milkshake': 'menu/Milkshakes/Pistachio Swirl.jpg',
+      'aero milkshake': 'menu/Milkshakes/Aero.jpg',
+      'belgium milk': 'menu/Milkshakes/Belgium Milk Choclate Milkshake.jpg',
+      'daim milkshake': 'menu/Milkshakes/Daim.jpg',
+      'ferroro milkshake': 'menu/Milkshakes/Ferroro.jpg',
+      'ferrero milkshake': 'menu/Milkshakes/Ferroro.jpg',
+      // Waffles
+      'biscoff waffle': 'menu/Waffles/Biscoff Waffle.jpg',
+      'dubai': 'menu/Waffles/Dubai Kunafa Waffle.jpg',
+      'ferrero waffle': 'menu/Waffles/Ferror Waffle.jpg',
+      'kinder bueno waffle': 'menu/Waffles/Kinder Bueno Waffle.jpg',
+      'bueno waffle': 'menu/Waffles/Kinder Bueno Waffle.jpg',
+      'lolly pop': 'menu/Waffles/Lolly Pop Waffle.jpg',
+      'twix waffle': 'menu/Waffles/Twix Waffle.jpg',
+      // Crepes
+      'nutella crepe': 'menu/Crepes/Nutella Crepe.jpg',
+      'biscoff crepe': 'menu/Crepes/Biscoff.jpg',
+      'kinder bueno crepe': 'menu/Crepes/Kinder Bueno.jpg',
+      'bueno crepe': 'menu/Crepes/Kinder Bueno.jpg',
+      'ferrero crepe': 'menu/Crepes/Ferroro Crepe.jpg',
+      'oreo crepe': 'menu/Crepes/Oreo Crepe.jpg',
+      'dubai choc': 'menu/Crepes/Dubai Choclate Crepe.jpg',
+      'strawberry & nutella crepe': 'menu/Crepes/Strawberry & Nutella.jpg',
+      'strawberry nutella crepe': 'menu/Crepes/Strawberry & Nutella.jpg',
+      'maltesers crepe': 'menu/Crepes/Maltesers Crepe.jpg',
+      'twix crepe': 'menu/Crepes/Twix Crepe.jpg',
+      'banoffee crepe': 'menu/Crepes/Banoffe Crepe.jpg',
+      'bounty crepe': 'menu/Crepes/Bounty Crepe.jpg',
+      'pistachio crepe': 'menu/Crepes/Pistachio.jpg',
+      'aero crepe': 'menu/Crepes/Aero.jpg',
+      'reese': 'menu/Crepes/Resees Crepe.jpg',
+      // Cookie Dough
+      'nutella cookie': 'menu/Cookie Dough/Nutella Cookie Dough.jpg',
+      'biscoff cookie': 'menu/Cookie Dough/Biscoff Cookie Dough.jpg',
+      'kinder bueno cookie': 'menu/Cookie Dough/Kinder Bueno Cooke Dough.jpg',
+      'oreo cookie': 'menu/Cookie Dough/Oreo cookie Dough.jpg',
+      'pistachio cookie': 'menu/Cookie Dough/Pistachio Cookie Dough.jpg',
+      'dubai cookie': 'menu/Cookie Dough/Dubai Milk Choclate Cookie Dough.jpg',
+      'red velvet cookie': 'menu/Cookie Dough/Red Velvet Cookie Dough.jpg',
+      'double choc': 'menu/Cookie Dough/Double Choclate Cookie Dough.jpg',
+      'strawberry nutella cookie': 'menu/Cookie Dough/Strawberry Nutella Cookie Dough.jpg',
+      'white choc': 'menu/Cookie Dough/White Choclate Cookie Dough.jpg',
+      'banoffee cookie': 'menu/Cookie Dough/Banoffe Cookie Dough.jpg',
+      'ferrero cookie': 'menu/Cookie Dough/Ferrror Cookie Dough.jpg',
+      // Sundaes
+      'oreo sundae': 'menu/Sundaes/Oreo Sundae.jpg',
+      'biscoff sundae': 'menu/Sundaes/Biscoff Sundae.jpg',
+      'kinder bueno sundae': 'menu/Sundaes/Kinder Bueno Sundae.jpg',
+      'ferrero sundae': 'menu/Sundaes/Ferrror Sundae.jpg',
+      'maltesers sundae': 'menu/Sundaes/Maltesers Sundae.jpg',
+      'strawberry sundae': 'menu/Sundaes/Strawberry Sundae.jpg',
+      'banana sundae': 'menu/Sundaes/Banana Sundae.jpg',
+      'brownie sundae': 'menu/Sundaes/Choclate Brownie Sundae.jpg',
+      'fudge sundae': 'menu/Sundaes/Choclate Fudge Sundae.jpg',
+      'twix sundae': 'menu/Sundaes/Twix Sundae.jpg',
+      'mint aero sundae': 'menu/Sundaes/Mint Aero Sundae.jpg',
+      'mars sundae': 'menu/Sundaes/Mars Caramel Crunch Sundae.jpg',
+      'kids sundae': 'menu/Sundaes/Kids Sundae.jpg',
+      'banoffee sundae': 'menu/Sundaes/Banoffe Sundae.jpg',
+      // Loaded Kunafa
+      'loaded kunafa': 'menu/Loaded Kunafa/Dubai Kunafas.jpg',
+      'banana kunafa': 'menu/Loaded Kunafa/Loaded Banana Kunafa.jpg',
+      'strawberry kunafa': 'menu/Loaded Kunafa/Loaded Kunafa Strawberry.jpg',
+      'black label': 'menu/Loaded Kunafa/Loaded Kunafa black label.jpg',
+      // Cakes
+      'matilda': 'menu/Cakes/Matilda Cake.jpg',
+      'dream cake': 'menu/Cakes/Dream Cake.jpg',
+      'old school': 'menu/Cakes/Old School Cake.jpg',
+      // Slushes
+      'slush': 'menu/Slushes & Tango Blast/Slushes.jpg',
+      'tango ice blast': 'menu/Slushes & Tango Blast/Tango Ice Blast.jpg',
+      // Doughnuts
+      'doughnut': 'menu/Donut Customisation/Doughnut Customisation.jpg',
+    };
+
+    // Function to find S3 fallback image for a product name
+    const findS3Image = (productName) => {
+      const lower = productName.toLowerCase();
+      for (const [key, path] of Object.entries(S3_IMAGE_MAP)) {
+        if (lower.includes(key)) {
+          return `${S3_BASE}/${encodeURI(path)}`;
+        }
+      }
+      return '';
+    };
+
     // Build products
     const products = items.map(item => {
       const data = item.itemData;
@@ -150,13 +274,23 @@ class SquareCatalogService {
         price: v.itemVariationData?.priceMoney?.amount ? Number(v.itemVariationData.priceMoney.amount) / 100 : 0
       }));
 
-      // Linked modifier groups
-      const linkedModifiers = (data?.modifierListInfo || [])
+      // Linked modifier groups - filter duplicates and mark required
+      let linkedModifiers = (data?.modifierListInfo || [])
         .map(ml => modifierGroups.find(g => g.id === ml.modifierListId))
         .filter(Boolean);
+      // Remove "Drink Size" if item already has size variations
+      if (variations.length > 1) {
+        linkedModifiers = linkedModifiers.filter(g => !g.name.toLowerCase().includes("drink size"));
+      }
+      // Mark cone type and whipp cream as required
+      linkedModifiers = linkedModifiers.map(g => ({
+        ...g,
+        required: g.name.toLowerCase().includes("cone") || g.name.toLowerCase().includes("whipp")
+      }));
 
-      // Image
-      const image = data?.imageIds?.[0] ? (imageMap[data.imageIds[0]] || '') : '';
+      // Image: prefer Square image, fallback to S3 match
+      const squareImage = data?.imageIds?.[0] ? (imageMap[data.imageIds[0]] || '') : '';
+      const image = squareImage || findS3Image(data?.name || '');
 
       return {
         id: item.id,
